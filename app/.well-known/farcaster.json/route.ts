@@ -5,9 +5,9 @@ export async function GET() {
 
   const manifest = {
     accountAssociation: {
-      header: '',
-      payload: '',
-      signature: '',
+      header: 'eyJmaWQiOjM4NjkwOCwidHlwZSI6ImF1dGgiLCJrZXkiOiIweEE1MEZjYjA2ZDc1RDYwQTQ3M0RiZWE0NjMyYTFFQzcyZTg5YzdCZmIifQ',
+      payload: 'eyJkb21haW4iOiJzbGlkZS1wdXp6bGUtbWluaWFwcC52ZXJjZWwuYXBwIn0',
+      signature: 'WxYyqMtS/3/iY2hlYkYIRiSf+nn2+yOCgBUhGVa3iJgYIE1sSPs3qbdDhvAGroaAN/O0RGEbyxppJH0VxuxzGxw=',
     },
     miniapp: {
       name: 'Slide Puzzle',
