@@ -86,8 +86,8 @@ export default function Home() {
           >
             ?
           </button>
-          <h1 className="font-display text-3xl text-white mb-2">
-            <span className="text-puzzle-accent">SLIDE</span> PUZZLE
+          <h1 className="font-display text-3xl mb-2 rainbow-text">
+            SLIDE PUZZLE
           </h1>
           <p className="text-gray-400 text-sm">
             Solve • Mint • Compete

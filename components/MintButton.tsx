@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useState, useCallback, useEffect } from 'react';
+import { useAccount, useDisconnect, useConnect, useConnectors } from 'wagmi';
 import {
   Transaction,
   TransactionButton,
@@ -37,7 +37,21 @@ export function MintButton({ difficulty, timeInMs, onMintSuccess }: MintButtonPr
   const config = DIFFICULTY_CONFIG[difficulty];
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const { connect } = useConnect();
+  const connectors = useConnectors();
   const [hasMinted, setHasMinted] = useState(false);
+  const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
+
+  // Farcaster内では自動接続を試みる
+  useEffect(() => {
+    if (!isConnected && !autoConnectAttempted) {
+      setAutoConnectAttempted(true);
+      const farcasterConnector = connectors.find(c => c.id === 'farcasterFrame');
+      if (farcasterConnector) {
+        connect({ connector: farcasterConnector });
+      }
+    }
+  }, [isConnected, autoConnectAttempted, connectors, connect]);
 
   const handleOnStatus = useCallback((status: LifecycleStatus) => {
     console.log('Transaction status:', status.statusName, status.statusData);

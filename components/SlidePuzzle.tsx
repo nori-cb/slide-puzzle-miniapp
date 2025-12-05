@@ -221,10 +221,11 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, isPlaying }: Slid
         Moves: <span className="text-white font-bold">{moveCount}</span>
       </div>
 
-      {/* リセットボタン */}
+      {/* リセットボタン（コメントアウト）
       <button onClick={resetPuzzle} className="btn-secondary text-sm">
         Reset Puzzle
       </button>
+      */}
 
       {/* クリアメッセージ */}
       {isComplete && (
