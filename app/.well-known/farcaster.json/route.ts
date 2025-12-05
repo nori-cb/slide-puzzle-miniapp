@@ -4,21 +4,20 @@ export async function GET() {
   const appUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 
   const manifest = {
-    // accountAssociation は本番デプロイ後に Base Build で生成して追加
-    // https://www.base.dev/preview?tab=account
     accountAssociation: {
       header: '',
       payload: '',
       signature: '',
     },
-    frame: {
-      version: '1',
+    miniapp: {
       name: 'Slide Puzzle',
       iconUrl: `${appUrl}/icon.png`,
-      homeUrl: appUrl,
       splashImageUrl: `${appUrl}/splash.png`,
       splashBackgroundColor: '#0a0a0f',
-      webhookUrl: `${appUrl}/api/webhook`,
+      homeUrl: appUrl,
+    },
+    baseBuilder: {
+      ownerAddress: '0xc60d9F919D80594a38a22BDC6929d6A0AA8cD7De',
     },
   };
 
