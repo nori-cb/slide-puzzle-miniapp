@@ -10,6 +10,7 @@ export async function GET() {
       signature: 'WxYyqMtS/3/iY2hlYkYIRiSf+nn2+yOCgBUhGVa3iJgYIE1sSPs3qbdDhvAGroaAN/O0RGEbyxppJH0VxuxzGxw=',
     },
     miniapp: {
+      version: '1.0.0',
       name: 'Slide Puzzle',
       iconUrl: `${appUrl}/icon.png`,
       splashImageUrl: `${appUrl}/splash.png`,
