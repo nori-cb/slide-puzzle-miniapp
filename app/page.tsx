@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import sdk from '@farcaster/frame-sdk';
 import { SlidePuzzle } from '@/components/SlidePuzzle';
 import { Timer } from '@/components/Timer';
 import { DifficultySelector } from '@/components/DifficultySelector';
@@ -19,8 +20,24 @@ export default function Home() {
   const [finalTime, setFinalTime] = useState(0);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [hasMinted, setHasMinted] = useState(false);
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   
   const { showTutorial, closeTutorial, openTutorial } = useTutorial();
+
+  // Farcaster SDK初期化
+  useEffect(() => {
+    const initSDK = async () => {
+      try {
+        await sdk.actions.ready();
+        setIsSDKLoaded(true);
+      } catch (error) {
+        // Farcaster外で実行されている場合はエラーになるが、無視してOK
+        console.log('Farcaster SDK not available (running outside Farcaster)');
+        setIsSDKLoaded(true);
+      }
+    };
+    initSDK();
+  }, []);
 
   const handleStart = useCallback(() => {
     setGameState('playing');
