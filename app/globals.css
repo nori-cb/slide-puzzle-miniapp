@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;600&family=Rubik:wght@700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Orbitron', system-ui;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-tile: 'Rubik', system-ui;
+}
+
+/* OnchainKit component overrides */
+[data-testid="ockConnectWallet_Container"] {
+  width: 100%;
+}
+
+[data-testid="ockConnectWallet_Container"] button {
+  width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-mono);
+  background: #0a0a0f;
+  color: #ffffff;
+  min-height: 100vh;
+  background-image: 
+    radial-gradient(ellipse at top, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(94, 45, 156, 0.05) 0%, transparent 50%);
+}
+
+/* Puzzle tile styles */
+.puzzle-tile {
+  @apply flex items-center justify-center cursor-pointer select-none;
+  @apply transition-all duration-150 ease-out;
+  @apply rounded-lg;
+  font-family: var(--font-tile);
+  font-weight: 900;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Easy - 落ち着いた緑 */
+.puzzle-tile.tile-easy {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+.puzzle-tile.tile-easy:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* Normal - 落ち着いた青 */
+.puzzle-tile.tile-normal {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+.puzzle-tile.tile-normal:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+/* Hard - 落ち着いた紫 */
+.puzzle-tile.tile-hard {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+}
+.puzzle-tile.tile-hard:hover {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.puzzle-tile.empty {
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.puzzle-tile.empty:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Difficulty badge styles */
+.difficulty-badge {
+  @apply px-4 py-2 rounded-xl font-display font-bold uppercase tracking-wider;
+  @apply transition-all duration-200 cursor-pointer;
+  @apply border-2 text-center;
+  min-width: 80px;
+}
+
+.difficulty-badge.easy {
+  @apply border-green-600 text-green-400;
+  @apply hover:bg-green-600 hover:text-white;
+}
+
+.difficulty-badge.easy.active {
+  @apply bg-green-600 text-white;
+}
+
+.difficulty-badge.normal {
+  @apply border-blue-600 text-blue-400;
+  @apply hover:bg-blue-600 hover:text-white;
+}
+
+.difficulty-badge.normal.active {
+  @apply bg-blue-600 text-white;
+}
+
+.difficulty-badge.hard {
+  @apply border-purple-600 text-purple-400;
+  @apply hover:bg-purple-600 hover:text-white;
+}
+
+.difficulty-badge.hard.active {
+  @apply bg-purple-600 text-white;
+}
+
+/* Timer display */
+.timer-display {
+  @apply font-mono text-4xl font-bold;
+  color: #fef9c3;
+  text-shadow: 0 0 20px rgba(254, 249, 195, 0.4);
+}
+
+/* Button styles */
+.btn-primary {
+  @apply px-6 py-3 rounded-lg font-display font-bold uppercase tracking-wider;
+  @apply bg-puzzle-accent text-black;
+  @apply hover:bg-emerald-400 transition-all duration-200;
+  @apply active:scale-95;
+  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 30px rgba(0, 255, 136, 0.5);
+}
+
+.btn-secondary {
+  @apply px-6 py-3 rounded-lg font-display font-bold uppercase tracking-wider;
+  @apply bg-puzzle-card text-white border border-puzzle-border;
+  @apply hover:border-puzzle-accent hover:text-puzzle-accent transition-all duration-200;
+  @apply active:scale-95;
+}
+
+/* Card styles */
+.game-card {
+  @apply bg-puzzle-card border border-puzzle-border rounded-2xl p-6;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Leaderboard styles */
+.leaderboard-row {
+  @apply flex items-center justify-between py-3 px-4;
+  @apply border-b border-puzzle-border last:border-b-0;
+}
+
+.leaderboard-row:hover {
+  @apply bg-white/5;
+}
+
+.rank-badge {
+  @apply w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm;
+}
+
+.rank-1 {
+  @apply bg-yellow-500 text-black;
+}
+
+.rank-2 {
+  @apply bg-gray-400 text-black;
+}
+
+.rank-3 {
+  @apply bg-amber-700 text-white;
+}
+
+.rank-other {
+  @apply bg-puzzle-border text-gray-400;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #14141f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a3a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a4a;
+}

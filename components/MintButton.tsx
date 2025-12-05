@@ -1,0 +1,130 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useAccount, useDisconnect } from 'wagmi';
+import {
+  Transaction,
+  TransactionButton,
+  TransactionStatus,
+  TransactionStatusLabel,
+  TransactionStatusAction,
+} from '@coinbase/onchainkit/transaction';
+import type { LifecycleStatus } from '@coinbase/onchainkit/transaction';
+import {
+  ConnectWallet,
+  Wallet,
+} from '@coinbase/onchainkit/wallet';
+import {
+  Avatar,
+  Name,
+  Identity,
+} from '@coinbase/onchainkit/identity';
+import { Difficulty, DIFFICULTY_CONFIG, CONTRACT_ADDRESS, SLIDE_PUZZLE_ABI } from '@/lib/contract';
+import { formatTime } from '@/lib/puzzle';
+import { encodeFunctionData } from 'viem';
+import { baseSepolia, base } from 'viem/chains';
+
+interface MintButtonProps {
+  difficulty: Difficulty;
+  timeInMs: number;
+  onMintSuccess?: (txHash: string) => void;
+}
+
+// 環境変数でネットワークを切り替え
+const chain = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? base : baseSepolia;
+
+export function MintButton({ difficulty, timeInMs, onMintSuccess }: MintButtonProps) {
+  const config = DIFFICULTY_CONFIG[difficulty];
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const [hasMinted, setHasMinted] = useState(false);
+
+  const handleOnStatus = useCallback((status: LifecycleStatus) => {
+    console.log('Transaction status:', status.statusName, status.statusData);
+    if (status.statusName === 'success') {
+      setHasMinted(true);
+      const txHash = (status.statusData as { transactionReceipts?: { transactionHash: string }[] })?.transactionReceipts?.[0]?.transactionHash;
+      if (txHash) {
+        onMintSuccess?.(txHash);
+      }
+    }
+  }, [onMintSuccess]);
+
+  // トランザクションのcalls
+  const mintCalls = [
+    {
+      to: CONTRACT_ADDRESS as `0x${string}`,
+      data: encodeFunctionData({
+        abi: SLIDE_PUZZLE_ABI,
+        functionName: 'mint',
+        args: [difficulty, BigInt(timeInMs)],
+      }),
+    },
+  ];
+
+  if (!isConnected) {
+    return (
+      <div className="w-full">
+        <Wallet>
+          <ConnectWallet className="btn-primary w-full">
+            <span>Connect Wallet to Mint</span>
+          </ConnectWallet>
+        </Wallet>
+      </div>
+    );
+  }
+
+  if (hasMinted) {
+    return (
+      <div className="text-center">
+        <div className="text-puzzle-accent font-display text-lg mb-2">
+          ✅ NFT Minted Successfully!
+        </div>
+        <div className="text-sm text-gray-400">
+          Check your wallet for the NFT
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* 接続中のウォレット表示 */}
+      <div className="flex items-center justify-between bg-puzzle-card rounded-lg px-3 py-2">
+        <Identity address={address} className="flex items-center gap-2">
+          <Avatar className="w-6 h-6" />
+          <Name className="text-white text-sm" />
+        </Identity>
+        <button
+          onClick={() => disconnect()}
+          className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+        >
+          Disconnect
+        </button>
+      </div>
+
+      {/* 記録表示 */}
+      <div className="game-card text-center">
+        <div className="text-gray-400 text-sm mb-2">Your Record</div>
+        <div className="font-display text-xl text-white mb-1">{config.name}</div>
+        <div className="timer-display text-3xl">{formatTime(timeInMs)}</div>
+      </div>
+
+      {/* ミントボタン */}
+      <Transaction
+        chainId={chain.id}
+        calls={mintCalls}
+        onStatus={handleOnStatus}
+      >
+        <TransactionButton 
+          className="btn-primary w-full"
+          text="🎨 Mint NFT & Join Leaderboard"
+        />
+        <TransactionStatus>
+          <TransactionStatusLabel />
+          <TransactionStatusAction />
+        </TransactionStatus>
+      </Transaction>
+    </div>
+  );
+}
