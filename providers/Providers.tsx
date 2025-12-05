@@ -17,9 +17,10 @@ const queryClient = new QueryClient();
 
 // Wagmi設定（Farcasterコネクター優先）
 const wagmiConfig = createConfig({
-  chains: [chain],
+  chains: [base, baseSepolia],
   transports: {
-    [chain.id]: http(rpcUrl),
+    [base.id]: http('https://mainnet.base.org'),
+    [baseSepolia.id]: http('https://sepolia.base.org'),
   },
   connectors: [
     farcasterFrame(),
