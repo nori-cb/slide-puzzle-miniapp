@@ -55,18 +55,10 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
     onStart();
   }, [onStart]);
 
-  // リタイア処理（シャッフルして数字を隠す）
+  // リタイア処理（page.tsxのresetTriggerでコンポーネントが再マウントされる）
   const handleGiveUp = useCallback(() => {
-    setBoard(null);
-    setMoveCount(0);
-    setIsComplete(false);
-    setIsReady(false);
     onGiveUp?.();
-    
-    requestAnimationFrame(() => {
-      setBoard(shuffleBoard(gridSize));
-    });
-  }, [onGiveUp, gridSize]);
+  }, [onGiveUp]);
 
   // スワイプ方向を判定
   const getSwipeDirection = (startX: number, startY: number, endX: number, endY: number): SwipeDirection => {
@@ -209,10 +201,10 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className={`flex flex-col items-center gap-4 ${isReady && !isComplete ? 'touch-none' : ''}`}>
       {/* パズルボード */}
       <div
-        className={`relative bg-puzzle-border rounded-xl p-2 select-none ${isReady && !isComplete ? 'touch-none' : ''}`}
+        className="relative bg-puzzle-border rounded-xl p-2 select-none"
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${gridSize}, ${tileSize}px)`,

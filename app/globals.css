@@ -137,7 +137,8 @@ body {
 
 .btn-secondary {
   @apply px-6 py-3 rounded-lg font-display font-bold uppercase tracking-wider;
-  @apply bg-puzzle-card text-white border border-puzzle-border;
+  @apply text-white border border-puzzle-border;
+  background-color: #2a2a3c;
   @apply hover:border-puzzle-accent hover:text-puzzle-accent transition-all duration-200;
   @apply active:scale-95;
 }

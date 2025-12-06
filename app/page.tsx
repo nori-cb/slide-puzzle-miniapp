@@ -74,6 +74,7 @@ export default function Home() {
   const handleGiveUp = useCallback(() => {
     setGameState('idle');
     setCurrentTime(0);
+    setResetTrigger((prev) => prev + 1);
   }, []);
 
   const handleMintSuccess = useCallback(() => {
@@ -121,7 +122,7 @@ export default function Home() {
         </div>
 
         {/* パズル */}
-        <div className="game-card mb-6">
+        <div className={`game-card mb-6 ${gameState === 'playing' ? 'touch-none' : ''}`}>
           <SlidePuzzle
             key={resetTrigger}
             difficulty={difficulty}
