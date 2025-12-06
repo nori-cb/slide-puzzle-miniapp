@@ -20,9 +20,8 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
 
   const [board, setBoard] = useState<Board | null>(null);
   const [moveCount, setMoveCount] = useState(0);
-  const [hasStarted, setHasStarted] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const [hasGivenUp, setHasGivenUp] = useState(false);
+  const [isReady, setIsReady] = useState(false); // Startボタンが押されたか
 
   // スワイプ用の状態
   const dragState = useRef<{ x: number; y: number; index: number } | null>(null);
@@ -31,9 +30,8 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
   useEffect(() => {
     setBoard(null);
     setMoveCount(0);
-    setHasStarted(false);
     setIsComplete(false);
-    setHasGivenUp(false);
+    setIsReady(false);
     
     requestAnimationFrame(() => {
       setBoard(shuffleBoard(gridSize));
@@ -43,20 +41,32 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
   const resetPuzzle = useCallback(() => {
     setBoard(null);
     setMoveCount(0);
-    setHasStarted(false);
     setIsComplete(false);
-    setHasGivenUp(false);
+    setIsReady(false);
     
     requestAnimationFrame(() => {
       setBoard(shuffleBoard(gridSize));
     });
   }, [gridSize]);
 
-  // リタイア処理
+  // Startボタンを押したとき
+  const handleStart = useCallback(() => {
+    setIsReady(true);
+    onStart();
+  }, [onStart]);
+
+  // リタイア処理（シャッフルして数字を隠す）
   const handleGiveUp = useCallback(() => {
-    setHasGivenUp(true);
+    setBoard(null);
+    setMoveCount(0);
+    setIsComplete(false);
+    setIsReady(false);
     onGiveUp?.();
-  }, [onGiveUp]);
+    
+    requestAnimationFrame(() => {
+      setBoard(shuffleBoard(gridSize));
+    });
+  }, [onGiveUp, gridSize]);
 
   // スワイプ方向を判定
   const getSwipeDirection = (startX: number, startY: number, endX: number, endY: number): SwipeDirection => {
@@ -75,7 +85,7 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
     }
   };
 
-  // ⑤複数タイルを一斉にスライド
+  // 複数タイルを一斉にスライド
   const slideTiles = useCallback(
     (tileIndex: number, direction: SwipeDirection) => {
       if (!board || isComplete || !direction) return false;
@@ -91,33 +101,24 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
       const tilesToMove: number[] = [];
 
       if (direction === 'up' && emptyCol === tileCol && emptyRow < tileRow) {
-        // 上方向: emptyRow+1 から tileRow までのタイルを上に移動
         for (let r = emptyRow + 1; r <= tileRow; r++) {
           tilesToMove.push(r * gridSize + tileCol);
         }
       } else if (direction === 'down' && emptyCol === tileCol && emptyRow > tileRow) {
-        // 下方向: emptyRow-1 から tileRow までのタイルを下に移動
         for (let r = emptyRow - 1; r >= tileRow; r--) {
           tilesToMove.push(r * gridSize + tileCol);
         }
       } else if (direction === 'left' && emptyRow === tileRow && emptyCol < tileCol) {
-        // 左方向: emptyCol+1 から tileCol までのタイルを左に移動
         for (let c = emptyCol + 1; c <= tileCol; c++) {
           tilesToMove.push(tileRow * gridSize + c);
         }
       } else if (direction === 'right' && emptyRow === tileRow && emptyCol > tileCol) {
-        // 右方向: emptyCol-1 から tileCol までのタイルを右に移動
         for (let c = emptyCol - 1; c >= tileCol; c--) {
           tilesToMove.push(tileRow * gridSize + c);
         }
       }
 
       if (tilesToMove.length === 0) return false;
-
-      if (!hasStarted) {
-        setHasStarted(true);
-        onStart();
-      }
 
       // 一斉に移動
       const newBoard = [...board];
@@ -137,14 +138,13 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
       }
       return true;
     },
-    [board, hasStarted, isComplete, gridSize, onStart, onComplete]
+    [board, isComplete, gridSize, onComplete]
   );
 
   // タイル上でドラッグ開始
   const handleTilePointerDown = (e: React.PointerEvent, index: number) => {
-    // ゲームプレイ中のみスワイプを処理
-    if (!isPlaying && !hasStarted) return;
-    if (isComplete || hasGivenUp || !board || board[index] === 0) return;
+    // Startボタンが押されていない、または完了時はスワイプ無効
+    if (!isReady || isComplete || !board || board[index] === 0) return;
     
     e.preventDefault();
     dragState.current = {
@@ -154,7 +154,7 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
     };
   };
 
-  // ボード上でドラッグ終了（どこで離しても検知）
+  // ボード上でドラッグ終了
   const handleBoardPointerUp = (e: React.PointerEvent) => {
     if (!dragState.current) return;
 
@@ -212,7 +212,7 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
     <div className="flex flex-col items-center gap-4">
       {/* パズルボード */}
       <div
-        className={`relative bg-puzzle-border rounded-xl p-2 select-none ${isPlaying && !isComplete && !hasGivenUp ? 'touch-none' : ''}`}
+        className={`relative bg-puzzle-border rounded-xl p-2 select-none ${isReady && !isComplete ? 'touch-none' : ''}`}
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${gridSize}, ${tileSize}px)`,
@@ -229,7 +229,7 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
               onPointerDown={(e) => handleTilePointerDown(e, index)}
               className={`puzzle-tile ${difficultyClass} ${value === 0 ? 'empty' : ''} ${
                 isComplete ? 'animate-celebrate' : ''
-              } ${value !== 0 && isPlaying && !isComplete && !hasGivenUp ? 'cursor-grab active:cursor-grabbing' : ''}`}
+              } ${value !== 0 && isReady && !isComplete ? 'cursor-grab active:cursor-grabbing' : ''}`}
               style={{
                 width: tileSize,
                 height: tileSize,
@@ -238,7 +238,8 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
                 userSelect: 'none',
               }}
             >
-              {value !== 0 && value}
+              {/* Startボタンを押すまでは数字を隠す */}
+              {value !== 0 && (isReady ? value : '?')}
             </div>
           );
         })}
@@ -249,16 +250,17 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
         Moves: <span className="text-white font-bold">{moveCount}</span>
       </div>
 
-      {/* ④リタイア/リスタートボタン */}
-      {isPlaying && !isComplete && !hasGivenUp && (
-        <button onClick={handleGiveUp} className="btn-secondary text-sm">
-          Give Up
+      {/* Startボタン */}
+      {!isReady && !isComplete && (
+        <button onClick={handleStart} className="btn-primary text-lg px-8 py-3">
+          ▶ Start
         </button>
       )}
 
-      {hasGivenUp && (
-        <button onClick={resetPuzzle} className="btn-secondary text-sm">
-          🔄 Restart
+      {/* Give Upボタン */}
+      {isReady && !isComplete && (
+        <button onClick={handleGiveUp} className="btn-secondary text-sm">
+          Give Up
         </button>
       )}
 
