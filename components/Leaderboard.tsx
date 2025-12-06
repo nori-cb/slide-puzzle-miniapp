@@ -7,6 +7,7 @@ import { formatTime, shortenAddress } from '@/lib/puzzle';
 
 interface LeaderboardProps {
   difficulty: Difficulty;
+  refreshTrigger?: number;
 }
 
 interface LeaderboardEntry {
@@ -15,7 +16,7 @@ interface LeaderboardEntry {
   tokenId: bigint;
 }
 
-export function Leaderboard({ difficulty }: LeaderboardProps) {
+export function Leaderboard({ difficulty, refreshTrigger }: LeaderboardProps) {
   const config = DIFFICULTY_CONFIG[difficulty];
 
   const { data, isLoading, refetch } = useReadContract({
@@ -24,6 +25,13 @@ export function Leaderboard({ difficulty }: LeaderboardProps) {
     functionName: 'getLeaderboard',
     args: [difficulty],
   });
+
+  // refreshTriggerが変更されたらリフレッシュ
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
 
   const entries = (data as LeaderboardEntry[] | undefined) || [];
 

@@ -21,6 +21,7 @@ export default function Home() {
   const [resetTrigger, setResetTrigger] = useState(0);
   const [hasMinted, setHasMinted] = useState(false);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [leaderboardRefresh, setLeaderboardRefresh] = useState(0);
   
   const { showTutorial, closeTutorial, openTutorial } = useTutorial();
 
@@ -70,8 +71,15 @@ export default function Home() {
     setResetTrigger((prev) => prev + 1);
   }, []);
 
+  const handleGiveUp = useCallback(() => {
+    setGameState('idle');
+    setCurrentTime(0);
+  }, []);
+
   const handleMintSuccess = useCallback(() => {
     setHasMinted(true);
+    // リーダーボードを自動リフレッシュ
+    setLeaderboardRefresh((prev) => prev + 1);
   }, []);
 
   return (
@@ -90,7 +98,7 @@ export default function Home() {
             SLIDE PUZZLE
           </h1>
           <p className="text-gray-400 text-sm">
-            Solve • Mint • Compete
+            Move • Solve • Mint
           </p>
         </div>
 
@@ -119,6 +127,7 @@ export default function Home() {
             difficulty={difficulty}
             onStart={handleStart}
             onComplete={handleComplete}
+            onGiveUp={handleGiveUp}
             isPlaying={gameState === 'playing'}
           />
         </div>
@@ -146,7 +155,7 @@ export default function Home() {
         )}
 
         {/* リーダーボード */}
-        <Leaderboard difficulty={difficulty} />
+        <Leaderboard difficulty={difficulty} refreshTrigger={leaderboardRefresh} />
 
         {/* フッター */}
         <footer className="text-center mt-8 text-gray-500 text-xs">

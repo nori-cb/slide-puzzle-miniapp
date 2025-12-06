@@ -77,14 +77,14 @@ export function shuffleBoard(gridSize: number, moves: number = 300): Board {
   return board;
 }
 
-// タイムをフォーマット (例: 1:23.456)
+// タイムをフォーマット (例: 1:23.45)
 export function formatTime(timeInMs: number): string {
   const minutes = Math.floor(timeInMs / 60000);
   const seconds = Math.floor((timeInMs % 60000) / 1000);
-  const ms = timeInMs % 1000;
+  const ms = Math.floor((timeInMs % 1000) / 10);
 
   const secondsStr = seconds.toString().padStart(2, '0');
-  const msStr = ms.toString().padStart(3, '0');
+  const msStr = ms.toString().padStart(2, '0');
 
   return `${minutes}:${secondsStr}.${msStr}`;
 }
