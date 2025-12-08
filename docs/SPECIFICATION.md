@@ -54,8 +54,23 @@ Slide Puzzle Master は、Base ブロックチェーン上で動作するスラ�
 #### パズルの仕様
 
 - **シャッフル方式**: 完成状態から実際のスライド操作を300回シミュレートすることで、必ず解ける配置を生成
-- **タイマー**: 最初のピース移動でスタート、完成でストップ（ミリ秒単位）
+- **Startボタン**: パズル開始前に▶ Startボタンを押す必要がある
+  - 開始前は数字が表示され、配置を記憶できる
+  - Start押下後は数字が「?」で隠される
+  - Start押下と同時にタイマースタート
+- **タイマー**: Startボタン押下でスタート、完成でストップ（ミリ秒単位）
 - **移動回数**: カウント表示（NFTには記録されない）
+- **操作方法**: PointerEvent APIによるスワイプ/ドラッグ操作
+  - マウスとタッチを統一的に処理
+  - 空きマスに向かってスワイプすることで、その列/行全体を同時移動
+  - 複数タイルの一括スライドが可能
+- **Give Upボタン**: プレイ中にリタイアしてパズルをリセット可能
+
+#### チュートリアルモーダル
+
+- **初回起動時に自動表示**: localStorage使用（`slidepuzzle_tutorial_seen`）
+- **再表示機能**: 右上の「?」ボタンでいつでも再表示可能
+- **内容**: ゴールの図と操作方法の説明
 
 ### 2.2 NFTミント機能
 
@@ -128,7 +143,8 @@ NFTミント後、Farcaster（分散型SNS）に結果をCast（投稿）でき�
 | | React | 18.x | UIライブラリ |
 | | TypeScript | 5.x | 型安全なJavaScript |
 | | Tailwind CSS | 3.x | スタイリング |
-| **Web3** | MiniKit | latest | Base Mini App SDK |
+| **Web3** | OnchainKit | latest | CoinbaseのWeb3 UIコンポーネント |
+| | Farcaster Frame SDK | latest | @farcaster/frame-sdk, @farcaster/frame-wagmi-connector |
 | | Wagmi | 2.x | React用Web3フック |
 | | Viem | 2.x | Ethereumクライアント |
 | **Smart Contract** | Solidity | 0.8.20 | コントラクト言語 |
@@ -155,14 +171,15 @@ slide-puzzle-miniapp/
 │   ├── DifficultySelector.tsx    # 難易度選択UI
 │   ├── Leaderboard.tsx           # ランキング表示
 │   ├── MintButton.tsx            # NFTミントボタン
-│   └── ShareButton.tsx           # Farcaster共有ボタン
+│   ├── ShareButton.tsx           # Farcaster共有ボタン
+│   └── TutorialModal.tsx         # チュートリアルモーダル
 │
 ├── lib/                          # ユーティリティ・設定
 │   ├── contract.ts               # コントラクトABI・アドレス
 │   └── puzzle.ts                 # パズルロジック
 │
 ├── providers/                    # Reactプロバイダー
-│   └── Providers.tsx             # Wagmi/ReactQuery設定
+│   └── Providers.tsx             # OnchainKit/Wagmi/ReactQuery設定
 │
 ├── contracts/                    # スマートコントラクト
 │   └── SlidePuzzleNFT.sol        # NFTコントラクト
@@ -190,12 +207,13 @@ slide-puzzle-miniapp/
 
 | ファイル | 説明 | Props |
 |---------|------|-------|
-| `SlidePuzzle.tsx` | パズルボードの表示と操作。タイルのクリックイベント、完成判定 | `difficulty`, `onStart`, `onComplete`, `isPlaying` |
+| `SlidePuzzle.tsx` | パズルボードの表示と操作。PointerEvent APIでスワイプ/ドラッグ処理、複数タイル同時移動、完成判定 | `difficulty`, `onStart`, `onComplete`, `onGiveUp`, `isPlaying` |
 | `Timer.tsx` | 経過時間の表示（10ms間隔で更新） | `isRunning`, `onTimeUpdate`, `reset` |
 | `DifficultySelector.tsx` | Easy/Normal/Hardボタンの表示 | `selected`, `onChange`, `disabled` |
-| `Leaderboard.tsx` | トップ10ランキングの表示。コントラクトから読み取り | `difficulty` |
-| `MintButton.tsx` | ウォレット接続とNFTミント処理 | `difficulty`, `timeInMs`, `onMintSuccess` |
+| `Leaderboard.tsx` | トップ10ランキングの表示。コントラクトから読み取り。自動リフレッシュ機能 | `difficulty`, `refreshTrigger` |
+| `MintButton.tsx` | OnchainKitのTransaction/TransactionButtonを使用。ウォレット接続とNFTミント処理。Farcaster内で自動接続を試みる | `difficulty`, `timeInMs`, `onMintSuccess` |
 | `ShareButton.tsx` | FarcasterへのCast投稿 | `difficulty`, `timeInMs` |
+| `TutorialModal.tsx` | 初回起動時に表示されるチュートリアル。localStorageで既読管理 | `onClose` |
 
 #### `/lib` - ロジック・設定
 
@@ -208,7 +226,7 @@ slide-puzzle-miniapp/
 
 | ファイル | 説明 |
 |---------|------|
-| `Providers.tsx` | Wagmi設定（チェーン、コネクター）、ReactQueryクライアント |
+| `Providers.tsx` | OnchainKitProvider、WagmiProvider、ReactQueryクライアント。farcasterFrameコネクターを優先配置 |
 
 #### `/contracts` - スマートコントラクト
 
@@ -240,23 +258,27 @@ slide-puzzle-miniapp/
 │ 2. パズル表示                                                │
 │    SlidePuzzle.tsx                                          │
 │    - shuffleBoard() で必ず解ける配置を生成                   │
-│    - グリッドサイズに応じたタイルを表示                       │
+│    - グリッドサイズに応じたタイルを表示（数字が見える）       │
+│    - isReady=false の状態（記憶フェーズ）                    │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 3. ゲーム開始（最初のタイル移動）                             │
-│    - handleTileClick() で移動可能か判定                      │
-│    - canMove() → getNeighbors() で隣接チェック              │
+│ 3. ゲーム開始（Startボタン押下）                             │
+│    - handleStart() → setIsReady(true)                       │
+│    - タイルの数字が「?」で隠される                            │
 │    - onStart() コールバック → Timer 開始                    │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ 4. パズル操作                                                │
-│    - タイルクリック → moveTile() でスワップ                  │
+│    - PointerEvent API: onPointerDown/onPointerUp            │
+│    - スワイプ方向を判定（getSwipeDirection）                 │
+│    - slideTiles() で複数タイル同時移動                       │
 │    - 10ms間隔で Timer 更新                                   │
 │    - 移動回数カウント                                        │
+│    - Give Upボタンでリタイア可能                             │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -273,14 +295,16 @@ slide-puzzle-miniapp/
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. ウォレット接続                                            │
 │    MintButton.tsx                                           │
+│    - Farcaster内では自動接続を試みる（farcasterFrame）       │
 │    - useAccount() で接続状態確認                             │
-│    - 未接続 → connect() で Coinbase Wallet 接続             │
+│    - 未接続 → OnchainKitのConnectWalletボタン表示           │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ 2. ミントトランザクション作成                                 │
-│    - useWriteContract() で mint(difficulty, timeInMs) 呼出  │
+│    - OnchainKit Transaction/TransactionButton使用           │
+│    - encodeFunctionData で mint(difficulty, timeInMs) 呼出  │
 │    - ウォレットで署名リクエスト表示                          │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -304,9 +328,10 @@ slide-puzzle-miniapp/
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ 5. 完了処理                                                  │
-│    - useWaitForTransactionReceipt() で確認待ち              │
-│    - isConfirmed → 成功UI表示                               │
-│    - Leaderboard.refetch() でランキング更新                 │
+│    - onStatus コールバックで status.statusName='success'    │
+│    - hasMinted=true に設定                                  │
+│    - onMintSuccess() → leaderboardRefresh 更新              │
+│    - Leaderboardコンポーネントが自動的にrefetch()実行        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -465,8 +490,11 @@ event LeaderboardUpdated(
 | `gameState` | `'idle' \| 'playing' \| 'completed'` | `'idle'` | ゲーム状態 |
 | `currentTime` | `number` | `0` | 現在の経過時間（ms） |
 | `finalTime` | `number` | `0` | クリア時の確定タイム |
-| `resetTrigger` | `number` | `0` | パズルリセット用カウンター |
+| `resetTrigger` | `number` | `0` | パズルリセット用カウンター（Give Up時に更新） |
 | `hasMinted` | `boolean` | `false` | NFTミント完了フラグ |
+| `isSDKLoaded` | `boolean` | `false` | Farcaster SDK初期化完了フラグ |
+| `leaderboardRefresh` | `number` | `0` | リーダーボード自動更新トリガー |
+| `showTutorial` | `boolean` | - | チュートリアルモーダル表示状態（useTutorialフック） |
 
 ### 7.2 パズルロジック（lib/puzzle.ts）
 
@@ -480,12 +508,24 @@ function shuffleBoard(gridSize: number, moves: number = 300): Board {
 }
 ```
 
-#### 移動判定
+#### マルチタイルスライド
 
 ```typescript
-function canMove(board: Board, tileIndex: number): boolean {
-  // 空白タイルの隣接マスかどうかを判定
-  // 上下左右の4方向をチェック（端の処理あり）
+function slideTiles(tileIndex: number, direction: SwipeDirection): boolean {
+  // 1. スワイプ方向に空きマスがあるかチェック
+  // 2. 移動するタイルのインデックスリストを生成
+  // 3. 一斉にスライド（複数タイルを同時移動）
+  // 4. 完成判定を実行
+}
+```
+
+#### スワイプ方向判定
+
+```typescript
+function getSwipeDirection(startX, startY, endX, endY): SwipeDirection {
+  // PointerEvent の座標から方向を判定
+  // 最小スワイプ距離（15px）をチェック
+  // 上下左右のいずれかを返す
 }
 ```
 
@@ -502,12 +542,43 @@ function isSolved(board: Board): boolean {
 | フック | 用途 |
 |--------|------|
 | `useAccount` | 接続中のウォレットアドレス取得 |
-| `useConnect` | ウォレット接続処理 |
-| `useWriteContract` | コントラクトへの書き込みトランザクション |
-| `useWaitForTransactionReceipt` | トランザクション確認待ち |
-| `useReadContract` | コントラクトからの読み取り |
+| `useConnect` | ウォレット接続処理（自動接続にも使用） |
+| `useConnectors` | 利用可能なコネクター一覧取得（farcasterFrame検索） |
+| `useDisconnect` | ウォレット切断 |
+| `useReadContract` | コントラクトからの読み取り（リーダーボード取得） |
 
-### 7.4 スタイリング
+### 7.4 PointerEvent API
+
+タッチとマウスを統一的に処理するため、PointerEvent APIを使用:
+
+| イベント | 用途 |
+|---------|------|
+| `onPointerDown` | タイル上でドラッグ開始、座標とタイルインデックスを記録 |
+| `onPointerUp` | ボード上でドラッグ終了、スワイプ方向を判定してスライド実行 |
+| `onPointerLeave` | ボード外でドラッグ終了、同様にスワイプ処理 |
+
+### 7.5 localStorage使用
+
+| キー | 値 | 用途 |
+|------|-----|------|
+| `slidepuzzle_tutorial_seen` | `"true"` | チュートリアルモーダルの既読フラグ |
+
+### 7.6 OnchainKit コンポーネント
+
+| コンポーネント | 用途 |
+|---------------|------|
+| `Transaction` | トランザクション実行のラッパー |
+| `TransactionButton` | トランザクション送信ボタン |
+| `TransactionStatus` | トランザクション状態表示 |
+| `TransactionStatusLabel` | ステータスラベル |
+| `TransactionStatusAction` | ステータスアクション |
+| `ConnectWallet` | ウォレット接続ボタン |
+| `Wallet` | ウォレット情報表示コンテナ |
+| `Identity` | ユーザーアイデンティティ表示 |
+| `Avatar` | ユーザーアバター |
+| `Name` | ユーザー名/ENS名 |
+
+### 7.7 スタイリング
 
 #### カスタムCSSクラス（globals.css）
 
