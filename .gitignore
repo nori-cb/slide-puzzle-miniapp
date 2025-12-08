@@ -33,3 +33,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 *:Zone.Identifier
+
+# Claude Code settings
+.claude/
