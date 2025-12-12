@@ -7,6 +7,7 @@ import { formatTime, shortenAddress } from '@/lib/puzzle';
 
 interface LeaderboardProps {
   difficulty: Difficulty;
+  isImageMode: boolean;
   refreshTrigger?: number;
 }
 
@@ -16,14 +17,15 @@ interface LeaderboardEntry {
   tokenId: bigint;
 }
 
-export function Leaderboard({ difficulty, refreshTrigger }: LeaderboardProps) {
+export function Leaderboard({ difficulty, refreshTrigger, isImageMode }: LeaderboardProps) {
+  const puzzleType = isImageMode ? 1 : 0;
   const config = DIFFICULTY_CONFIG[difficulty];
 
   const { data, isLoading, refetch } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: SLIDE_PUZZLE_ABI,
     functionName: 'getLeaderboard',
-    args: [difficulty],
+    args: [difficulty, puzzleType],
   });
 
   // refreshTriggerが変更されたらリフレッシュ
@@ -47,7 +49,7 @@ export function Leaderboard({ difficulty, refreshTrigger }: LeaderboardProps) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-lg text-white">
           🏆 Leaderboard
-          <span className="ml-2 text-sm opacity-70">({config.name.toUpperCase()})</span>
+          <span className="ml-2 text-sm opacity-70">({config.name.toUpperCase()} & {isImageMode ? 'Image' : 'Number'})</span>
         </h3>
         <button
           onClick={() => refetch()}

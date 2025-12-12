@@ -27,13 +27,16 @@ import { baseSepolia, base } from 'viem/chains';
 interface MintButtonProps {
   difficulty: Difficulty;
   timeInMs: number;
+  moveCount: number;
+  isImageMode: boolean;
+  imageIpfsHash: string;
   onMintSuccess?: (txHash: string) => void;
 }
 
 // 環境変数でネットワークを切り替え
 const chain = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? base : baseSepolia;
 
-export function MintButton({ difficulty, timeInMs, onMintSuccess }: MintButtonProps) {
+export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, imageIpfsHash, onMintSuccess }: MintButtonProps) {
   const config = DIFFICULTY_CONFIG[difficulty];
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
@@ -65,13 +68,15 @@ export function MintButton({ difficulty, timeInMs, onMintSuccess }: MintButtonPr
   }, [onMintSuccess]);
 
   // トランザクションのcalls
+  const puzzleType = isImageMode ? 1 : 0; // 0: Number, 1: Image
+
   const mintCalls = [
     {
       to: CONTRACT_ADDRESS as `0x${string}`,
       data: encodeFunctionData({
         abi: SLIDE_PUZZLE_ABI,
         functionName: 'mint',
-        args: [difficulty, BigInt(timeInMs)],
+        args: [difficulty, BigInt(timeInMs), puzzleType, BigInt(moveCount), imageIpfsHash],
       }),
     },
   ];

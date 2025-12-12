@@ -1,7 +1,8 @@
 import { Abi } from 'viem';
 
 // デプロイ後にこのアドレスを更新
-export const CONTRACT_ADDRESS = '0xF0fF4783fE53531aBAEfef67cE0f15c559E04a04' as const;
+//export const CONTRACT_ADDRESS = '0xF0fF4783fE53531aBAEfef67cE0f15c559E04a04' as const;
+export const CONTRACT_ADDRESS = '0x55f6CF7f88eeEA2baAaDb47D23BB506B125Eea8d' as const;
 
 export const SLIDE_PUZZLE_ABI: Abi = [
   {
@@ -13,6 +14,9 @@ export const SLIDE_PUZZLE_ABI: Abi = [
     inputs: [
       { internalType: 'uint8', name: 'difficulty', type: 'uint8' },
       { internalType: 'uint256', name: 'timeInMs', type: 'uint256' },
+      { internalType: 'uint8', name: 'puzzleType', type: 'uint8' },
+      { internalType: 'uint256', name: 'moveCount', type: 'uint256' },
+      { internalType: 'string', name: 'imageIpfsHash', type: 'string' },
     ],
     name: 'mint',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
@@ -20,7 +24,10 @@ export const SLIDE_PUZZLE_ABI: Abi = [
     type: 'function',
   },
   {
-    inputs: [{ internalType: 'uint8', name: 'difficulty', type: 'uint8' }],
+    inputs: [
+      { internalType: 'uint8', name: 'difficulty', type: 'uint8' },
+      { internalType: 'uint8', name: 'puzzleType', type: 'uint8' },
+    ],
     name: 'getLeaderboard',
     outputs: [
       {
@@ -45,6 +52,9 @@ export const SLIDE_PUZZLE_ABI: Abi = [
       { internalType: 'uint8', name: 'difficulty', type: 'uint8' },
       { internalType: 'uint256', name: 'timeInMs', type: 'uint256' },
       { internalType: 'uint256', name: 'timestamp', type: 'uint256' },
+      { internalType: 'uint8', name: 'puzzleType', type: 'uint8' },
+      { internalType: 'uint256', name: 'moveCount', type: 'uint256' },
+      { internalType: 'string', name: 'imageIpfsHash', type: 'string' },
     ],
     stateMutability: 'view',
     type: 'function',

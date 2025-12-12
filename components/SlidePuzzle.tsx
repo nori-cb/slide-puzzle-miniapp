@@ -7,14 +7,15 @@ import { Difficulty, DIFFICULTY_CONFIG } from '@/lib/contract';
 interface SlidePuzzleProps {
   difficulty: Difficulty;
   onStart: () => void;
-  onComplete: () => void;
+  onComplete: (moveCount: number) => void;
   onGiveUp?: () => void;
   isPlaying: boolean;
+  imageUrl?: string; // パズルに使用する画像のURL (オプション)
 }
 
 type SwipeDirection = 'up' | 'down' | 'left' | 'right' | null;
 
-export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlaying }: SlidePuzzleProps) {
+export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlaying, imageUrl }: SlidePuzzleProps) {
   const config = DIFFICULTY_CONFIG[difficulty];
   const gridSize = config.gridSize;
 
@@ -122,15 +123,16 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
       }
 
       setBoard(newBoard);
-      setMoveCount((prev) => prev + tilesToMove.length);
+      const newMoveCount = moveCount + tilesToMove.length;
+      setMoveCount(newMoveCount);
 
       if (isSolved(newBoard)) {
         setIsComplete(true);
-        onComplete();
+        onComplete(newMoveCount);
       }
       return true;
     },
-    [board, isComplete, gridSize, onComplete]
+    [board, isComplete, gridSize, onComplete, moveCount]
   );
 
   // タイル上でドラッグ開始
@@ -214,7 +216,20 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
         onPointerLeave={handleBoardPointerLeave}
       >
         {board.map((value, index) => {
-          const difficultyClass = difficulty === 0 ? 'tile-easy' : difficulty === 1 ? 'tile-normal' : 'tile-hard';
+          // START前はグレー、START後は難易度に応じた色
+          const difficultyClass = !isReady
+            ? 'bg-gray-600'
+            : (difficulty === 0 ? 'tile-easy' : difficulty === 1 ? 'tile-normal' : 'tile-hard');
+
+          // 画像モードの場合、タイルの正しい位置を計算
+          const correctPosition = value === 0 ? gridSize * gridSize - 1 : value - 1;
+          const correctRow = Math.floor(correctPosition / gridSize);
+          const correctCol = correctPosition % gridSize;
+
+          // 背景画像の位置を計算
+          const backgroundPositionX = -(correctCol * tileSize);
+          const backgroundPositionY = -(correctRow * tileSize);
+
           return (
             <div
               key={index}
@@ -228,10 +243,18 @@ export function SlidePuzzle({ difficulty, onStart, onComplete, onGiveUp, isPlayi
                 fontSize: `${fontSize}px`,
                 visibility: value === 0 ? 'hidden' : 'visible',
                 userSelect: 'none',
+                ...(imageUrl && value !== 0 && isReady ? {
+                  backgroundImage: `url(${imageUrl})`,
+                  backgroundSize: `${tileSize * gridSize}px ${tileSize * gridSize}px`,
+                  backgroundPosition: `${backgroundPositionX}px ${backgroundPositionY}px`,
+                  backgroundRepeat: 'no-repeat',
+                } : {}),
               }}
             >
-              {/* Startボタンを押すまでは数字を隠す */}
-              {value !== 0 && (isReady ? value : '?')}
+              {/* Startボタンを押すまでは「?」を表示 */}
+              {value !== 0 && !isReady && '?'}
+              {/* Startボタン後: 画像モードでない場合のみ数字を表示 */}
+              {value !== 0 && isReady && !imageUrl && value}
             </div>
           );
         })}

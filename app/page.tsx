@@ -10,6 +10,7 @@ import { MintButton } from '@/components/MintButton';
 import { ShareButton } from '@/components/ShareButton';
 import { TutorialModal, useTutorial } from '@/components/TutorialModal';
 import { Difficulty } from '@/lib/contract';
+import { getRandomPuzzleImage, type PuzzleImage } from '@/lib/puzzleImages';
 
 type GameState = 'idle' | 'playing' | 'completed';
 
@@ -18,11 +19,14 @@ export default function Home() {
   const [gameState, setGameState] = useState<GameState>('idle');
   const [currentTime, setCurrentTime] = useState(0);
   const [finalTime, setFinalTime] = useState(0);
+  const [finalMoveCount, setFinalMoveCount] = useState(0);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [hasMinted, setHasMinted] = useState(false);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [leaderboardRefresh, setLeaderboardRefresh] = useState(0);
-  
+  const [isImageMode, setIsImageMode] = useState(false); // 画像モード切り替え
+  const [selectedImage, setSelectedImage] = useState<PuzzleImage | null>(null); // 選択された画像
+
   const { showTutorial, closeTutorial, openTutorial } = useTutorial();
 
   // Farcaster SDK初期化
@@ -43,11 +47,20 @@ export default function Home() {
   const handleStart = useCallback(() => {
     setGameState('playing');
     setHasMinted(false);
-  }, []);
 
-  const handleComplete = useCallback(() => {
+    // Imageモードの場合、ランダムに画像を選択
+    if (isImageMode) {
+      const randomImage = getRandomPuzzleImage();
+      setSelectedImage(randomImage);
+    } else {
+      setSelectedImage(null);
+    }
+  }, [isImageMode]);
+
+  const handleComplete = useCallback((moveCount: number) => {
     setGameState('completed');
     setFinalTime(currentTime);
+    setFinalMoveCount(moveCount);
   }, [currentTime]);
 
   const handleTimeUpdate = useCallback((time: number) => {
@@ -82,6 +95,12 @@ export default function Home() {
     // リーダーボードを自動リフレッシュ
     setLeaderboardRefresh((prev) => prev + 1);
   }, []);
+
+  const handleToggleMode = useCallback(() => {
+    if (gameState === 'playing') return; // プレイ中は切り替え不可
+    setIsImageMode((prev) => !prev);
+    setResetTrigger((prev) => prev + 1); // パズルをリセット
+  }, [gameState]);
 
   return (
     <main className="min-h-screen py-8 px-4">
@@ -121,6 +140,42 @@ export default function Home() {
           />
         </div>
 
+        {/* モード切り替えタブ */}
+        <div className="mb-6 flex justify-center">
+          <div className="inline-flex bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => {
+                if (gameState !== 'playing' && isImageMode) {
+                  handleToggleMode();
+                }
+              }}
+              disabled={gameState === 'playing'}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                !isImageMode
+                  ? 'bg-orange-600 text-white shadow-md'
+                  : 'text-gray-400 hover:text-gray-200'
+              } ${gameState === 'playing' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+            >
+              Number
+            </button>
+            <button
+              onClick={() => {
+                if (gameState !== 'playing' && !isImageMode) {
+                  handleToggleMode();
+                }
+              }}
+              disabled={gameState === 'playing'}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                isImageMode
+                  ? 'bg-orange-600 text-white shadow-md'
+                  : 'text-gray-400 hover:text-gray-200'
+              } ${gameState === 'playing' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+            >
+              Image
+            </button>
+          </div>
+        </div>
+
         {/* パズル */}
         <div className={`game-card mb-6 ${gameState === 'playing' ? 'touch-none' : ''}`}>
           <SlidePuzzle
@@ -130,6 +185,7 @@ export default function Home() {
             onComplete={handleComplete}
             onGiveUp={handleGiveUp}
             isPlaying={gameState === 'playing'}
+            imageUrl={isImageMode && selectedImage ? selectedImage.url : undefined}
           />
         </div>
 
@@ -139,6 +195,9 @@ export default function Home() {
             <MintButton
               difficulty={difficulty}
               timeInMs={finalTime}
+              moveCount={finalMoveCount}
+              isImageMode={isImageMode}
+              imageIpfsHash={selectedImage?.ipfsHash || ''}
               onMintSuccess={handleMintSuccess}
             />
 
@@ -156,7 +215,7 @@ export default function Home() {
         )}
 
         {/* リーダーボード */}
-        <Leaderboard difficulty={difficulty} refreshTrigger={leaderboardRefresh} />
+        <Leaderboard difficulty={difficulty} refreshTrigger={leaderboardRefresh} isImageMode={isImageMode} />
 
         {/* フッター */}
         <footer className="text-center mt-8 text-gray-500 text-xs">
