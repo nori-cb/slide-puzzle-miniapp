@@ -18,12 +18,20 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         Hell     // 7x7 (Phase 2)
     }
 
+    enum PuzzleType {
+        Number,  // 0: 数字パズル
+        Image    // 1: 画像パズル
+    }
+
     // ============ Structs ============
     struct PuzzleRecord {
         address player;
         Difficulty difficulty;
         uint256 timeInMs;  // クリアタイム（ミリ秒）
         uint256 timestamp; // ミント時刻
+        PuzzleType puzzleType; // パズルタイプ
+        uint256 moveCount; // 移動回数
+        string imageIpfsHash; // クリア時の画像IPFSハッシュ（Imageモード時のみ）
     }
 
     struct LeaderboardEntry {
@@ -34,13 +42,13 @@ contract SlidePuzzleNFT is ERC721, Ownable {
 
     // ============ State Variables ============
     uint256 private _nextTokenId;
-    
+
     // tokenId => PuzzleRecord
     mapping(uint256 => PuzzleRecord) public puzzleRecords;
-    
-    // difficulty => LeaderboardEntry[] (トップ10を保持)
-    mapping(Difficulty => LeaderboardEntry[]) public leaderboards;
-    
+
+    // difficulty => puzzleType => LeaderboardEntry[] (トップ10を保持)
+    mapping(Difficulty => mapping(PuzzleType => LeaderboardEntry[])) public leaderboards;
+
     // 各難易度のリーダーボードサイズ上限
     uint256 public constant MAX_LEADERBOARD_SIZE = 10;
 
@@ -49,11 +57,13 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         address indexed player,
         uint256 indexed tokenId,
         Difficulty difficulty,
+        PuzzleType puzzleType,
         uint256 timeInMs
     );
 
     event LeaderboardUpdated(
         Difficulty indexed difficulty,
+        PuzzleType indexed puzzleType,
         address indexed player,
         uint256 timeInMs,
         uint256 rank
@@ -64,11 +74,20 @@ contract SlidePuzzleNFT is ERC721, Ownable {
     }
 
     // ============ Main Functions ============
-    
+
     /// @notice パズルクリア時にNFTをミント
     /// @param difficulty 難易度
     /// @param timeInMs クリアタイム（ミリ秒）
-    function mint(Difficulty difficulty, uint256 timeInMs) external returns (uint256) {
+    /// @param puzzleType パズルタイプ（Number or Image）
+    /// @param moveCount 移動回数
+    /// @param imageIpfsHash 画像IPFSハッシュ（Imageモード時のみ）
+    function mint(
+        Difficulty difficulty,
+        uint256 timeInMs,
+        PuzzleType puzzleType,
+        uint256 moveCount,
+        string calldata imageIpfsHash
+    ) external returns (uint256) {
         uint256 tokenId = _nextTokenId++;
         _safeMint(msg.sender, tokenId);
 
@@ -76,13 +95,16 @@ contract SlidePuzzleNFT is ERC721, Ownable {
             player: msg.sender,
             difficulty: difficulty,
             timeInMs: timeInMs,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            puzzleType: puzzleType,
+            moveCount: moveCount,
+            imageIpfsHash: imageIpfsHash
         });
 
-        emit PuzzleSolved(msg.sender, tokenId, difficulty, timeInMs);
+        emit PuzzleSolved(msg.sender, tokenId, difficulty, puzzleType, timeInMs);
 
         // リーダーボード更新
-        _updateLeaderboard(difficulty, msg.sender, timeInMs, tokenId);
+        _updateLeaderboard(difficulty, puzzleType, msg.sender, timeInMs, tokenId);
 
         return tokenId;
     }
@@ -90,12 +112,13 @@ contract SlidePuzzleNFT is ERC721, Ownable {
     /// @notice リーダーボードを更新
     function _updateLeaderboard(
         Difficulty difficulty,
+        PuzzleType puzzleType,
         address player,
         uint256 timeInMs,
         uint256 tokenId
     ) internal {
-        LeaderboardEntry[] storage board = leaderboards[difficulty];
-        
+        LeaderboardEntry[] storage board = leaderboards[difficulty][puzzleType];
+
         // 挿入位置を探す（タイム昇順）
         uint256 insertIndex = board.length;
         for (uint256 i = 0; i < board.length; i++) {
@@ -130,18 +153,18 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         // 挿入
         board[insertIndex] = newEntry;
 
-        emit LeaderboardUpdated(difficulty, player, timeInMs, insertIndex + 1);
+        emit LeaderboardUpdated(difficulty, puzzleType, player, timeInMs, insertIndex + 1);
     }
 
     // ============ View Functions ============
 
-    /// @notice 指定難易度のリーダーボードを取得
-    function getLeaderboard(Difficulty difficulty) 
-        external 
-        view 
-        returns (LeaderboardEntry[] memory) 
+    /// @notice 指定難易度・パズルタイプのリーダーボードを取得
+    function getLeaderboard(Difficulty difficulty, PuzzleType puzzleType)
+        external
+        view
+        returns (LeaderboardEntry[] memory)
     {
-        return leaderboards[difficulty];
+        return leaderboards[difficulty][puzzleType];
     }
 
     /// @notice NFTのメタデータを取得（オンチェーンSVG）
@@ -149,11 +172,11 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         _requireOwned(tokenId);
 
         PuzzleRecord memory record = puzzleRecords[tokenId];
-        
+
         string memory difficultyName = _getDifficultyName(record.difficulty);
         string memory gridSize = _getGridSize(record.difficulty);
         string memory timeStr = _formatTime(record.timeInMs);
-        string memory svg = _generateSVG(record.difficulty, record.timeInMs, difficultyName, gridSize);
+        string memory svg = _generateSVG(record.difficulty, record.timeInMs, record.puzzleType, record.imageIpfsHash, difficultyName, gridSize);
 
         string memory json = Base64.encode(
             bytes(
@@ -164,8 +187,10 @@ contract SlidePuzzleNFT is ERC721, Ownable {
                         '", "attributes": [',
                         '{"trait_type": "Difficulty", "value": "', difficultyName, '"},',
                         '{"trait_type": "Grid Size", "value": "', gridSize, '"},',
+                        '{"trait_type": "Type", "value": "', record.puzzleType == PuzzleType.Number ? "Number" : "Image", '"},',
                         '{"trait_type": "Time (ms)", "value": ', record.timeInMs.toString(), '},',
-                        '{"trait_type": "Time", "value": "', timeStr, '"}',
+                        '{"trait_type": "Time", "value": "', timeStr, '"},',
+                        '{"trait_type": "Moves", "value": ', record.moveCount.toString(), '}',
                         '], "image": "data:image/svg+xml;base64,', Base64.encode(bytes(svg)), '"}'
                     )
                 )
@@ -218,9 +243,39 @@ contract SlidePuzzleNFT is ERC721, Ownable {
     function _generateSVG(
         Difficulty difficulty,
         uint256 timeInMs,
+        PuzzleType puzzleType,
+        string memory imageIpfsHash,
         string memory difficultyName,
         string memory gridSize
     ) internal pure returns (string memory) {
+        // Imageモードの場合、IPFS画像を表示
+        if (puzzleType == PuzzleType.Image && bytes(imageIpfsHash).length > 0) {
+            string memory bgColor = _getBackgroundColor(difficulty);
+            string memory timeStr = _formatTime(timeInMs);
+
+            return string(
+                abi.encodePacked(
+                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">',
+                    '<defs>',
+                    '<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">',
+                    '<stop offset="0%" style="stop-color:', bgColor, ';stop-opacity:1" />',
+                    '<stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />',
+                    '</linearGradient>',
+                    '</defs>',
+                    '<rect width="400" height="400" fill="url(#bg)"/>',
+                    '<image href="ipfs://', imageIpfsHash, '" x="100" y="50" width="200" height="200" preserveAspectRatio="xMidYMid slice"/>',
+                    '<text x="200" y="280" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle" font-weight="bold">',
+                    difficultyName, ' (', gridSize, ')',
+                    '</text>',
+                    '<text x="200" y="320" font-family="Arial, sans-serif" font-size="32" fill="#fef9c3" text-anchor="middle" font-weight="bold">',
+                    timeStr,
+                    '</text>',
+                    '</svg>'
+                )
+            );
+        }
+
+        // Numberモードの場合、数字グリッドを表示
         string memory bgColor = _getBackgroundColor(difficulty);
         string memory timeStr = _formatTime(timeInMs);
 
