@@ -176,7 +176,7 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         string memory difficultyName = _getDifficultyName(record.difficulty);
         string memory gridSize = _getGridSize(record.difficulty);
         string memory timeStr = _formatTime(record.timeInMs);
-        string memory svg = _generateSVG(record.difficulty, record.timeInMs, record.puzzleType, record.imageIpfsHash, difficultyName, gridSize);
+        string memory svg = _generateSVG(record.difficulty, record.timeInMs, record.puzzleType, record.imageIpfsHash, difficultyName, gridSize, record.moveCount);
 
         string memory json = Base64.encode(
             bytes(
@@ -246,7 +246,8 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         PuzzleType puzzleType,
         string memory imageIpfsHash,
         string memory difficultyName,
-        string memory gridSize
+        string memory gridSize,
+        uint256 moveCount
     ) internal pure returns (string memory) {
         // Imageモードの場合、IPFS画像を表示
         if (puzzleType == PuzzleType.Image && bytes(imageIpfsHash).length > 0) {
@@ -263,12 +264,15 @@ contract SlidePuzzleNFT is ERC721, Ownable {
                     '</linearGradient>',
                     '</defs>',
                     '<rect width="400" height="400" fill="url(#bg)"/>',
-                    '<image href="ipfs://', imageIpfsHash, '" x="100" y="50" width="200" height="200" preserveAspectRatio="xMidYMid slice"/>',
-                    '<text x="200" y="280" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle" font-weight="bold">',
-                    difficultyName, ' (', gridSize, ')',
+                    '<image href="ipfs://', imageIpfsHash, '" x="85" y="50" width="230" height="230" preserveAspectRatio="xMidYMid slice"/>',
+                    '<text x="200" y="310" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">',
+                    difficultyName, ' - Image',
                     '</text>',
-                    '<text x="200" y="320" font-family="Arial, sans-serif" font-size="32" fill="#fef9c3" text-anchor="middle" font-weight="bold">',
+                    '<text x="200" y="350" font-family="Arial, sans-serif" font-size="28" fill="#fef9c3" text-anchor="middle" font-weight="bold">',
                     timeStr,
+                    '</text>',
+                    '<text x="200" y="380" font-family="Arial, sans-serif" font-size="18" fill="#a0a0a0" text-anchor="middle">',
+                    'Moves: ', moveCount.toString(),
                     '</text>',
                     '</svg>'
                 )
@@ -290,11 +294,14 @@ contract SlidePuzzleNFT is ERC721, Ownable {
                 '</defs>',
                 '<rect width="400" height="400" fill="url(#bg)"/>',
                 _generatePuzzleGrid(difficulty),
-                '<text x="200" y="320" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle" font-weight="bold">',
-                difficultyName, ' (', gridSize, ')',
+                '<text x="200" y="310" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle" font-weight="bold">',
+                difficultyName, ' - Number',
                 '</text>',
-                '<text x="200" y="360" font-family="Arial, sans-serif" font-size="32" fill="#fef9c3" text-anchor="middle" font-weight="bold">',
+                '<text x="200" y="350" font-family="Arial, sans-serif" font-size="28" fill="#fef9c3" text-anchor="middle" font-weight="bold">',
                 timeStr,
+                '</text>',
+                '<text x="200" y="380" font-family="Arial, sans-serif" font-size="18" fill="#a0a0a0" text-anchor="middle">',
+                'Moves: ', moveCount.toString(),
                 '</text>',
                 '</svg>'
             )
@@ -305,8 +312,8 @@ contract SlidePuzzleNFT is ERC721, Ownable {
     function _getBackgroundColor(Difficulty difficulty) internal pure returns (string memory) {
         if (difficulty == Difficulty.Easy) return "#2d5a27";      // 緑
         if (difficulty == Difficulty.Normal) return "#1e3a5f";    // 青
-        if (difficulty == Difficulty.Hard) return "#5c2d5c";      // 紫
-        if (difficulty == Difficulty.VeryHard) return "#8b0000";  // 赤
+        if (difficulty == Difficulty.Hard) return "#7f1d1d";      // 赤
+        if (difficulty == Difficulty.VeryHard) return "#8b0000";  // 濃い赤
         if (difficulty == Difficulty.Hell) return "#1a1a1a";      // 黒
         return "#333333";
     }
@@ -321,11 +328,13 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         else if (difficulty == Difficulty.Hell) gridCount = 7;
         else gridCount = 3;
 
-        uint256 gridSize = 200;
-        uint256 startX = 100;
-        uint256 startY = 50;
+        // グリッド全体のサイズを固定（Hard 5×5基準: 230px）
+        uint256 gridSize = 230;
         uint256 cellSize = gridSize / gridCount;
-        uint256 gap = 2;
+        uint256 gap = 4;
+        // グリッド全体を中央配置
+        uint256 startX = (400 - gridSize) / 2;
+        uint256 startY = 50;
 
         bytes memory cells;
         uint256 num = 1;

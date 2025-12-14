@@ -22,6 +22,7 @@ export default function Home() {
   const [finalMoveCount, setFinalMoveCount] = useState(0);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [hasMinted, setHasMinted] = useState(false);
+  const [mintedTokenId, setMintedTokenId] = useState<number | undefined>(undefined);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [leaderboardRefresh, setLeaderboardRefresh] = useState(0);
   const [isImageMode, setIsImageMode] = useState(false); // 画像モード切り替え
@@ -81,6 +82,7 @@ export default function Home() {
     setCurrentTime(0);
     setFinalTime(0);
     setHasMinted(false);
+    setMintedTokenId(undefined);
     setResetTrigger((prev) => prev + 1);
   }, []);
 
@@ -90,8 +92,11 @@ export default function Home() {
     setResetTrigger((prev) => prev + 1);
   }, []);
 
-  const handleMintSuccess = useCallback(() => {
+  const handleMintSuccess = useCallback((txHash: string, tokenId?: number) => {
     setHasMinted(true);
+    if (tokenId !== undefined) {
+      setMintedTokenId(tokenId);
+    }
     // リーダーボードを自動リフレッシュ
     setLeaderboardRefresh((prev) => prev + 1);
   }, []);
@@ -205,6 +210,8 @@ export default function Home() {
               <ShareButton
                 difficulty={difficulty}
                 timeInMs={finalTime}
+                isImageMode={isImageMode}
+                tokenId={mintedTokenId}
               />
             )}
 

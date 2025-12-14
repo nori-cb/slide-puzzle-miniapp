@@ -47,10 +47,14 @@ export function Leaderboard({ difficulty, refreshTrigger, isImageMode }: Leaderb
   return (
     <div className="game-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display text-lg text-white">
-          🏆 Leaderboard
-          <span className="ml-2 text-sm opacity-70">({config.name.toUpperCase()} & {isImageMode ? 'Image' : 'Number'})</span>
-        </h3>
+        <div>
+          <h3 className="font-display text-lg text-white">
+            🏆 Leaderboard
+          </h3>
+          <p className="text-sm text-gray-400 mt-1">
+            {config.name} - {isImageMode ? 'Image' : 'Number'}
+          </p>
+        </div>
         <button
           onClick={() => refetch()}
           className="text-xs text-gray-400 hover:text-puzzle-accent transition-colors"

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useDisconnect, useConnect, useConnectors } from 'wagmi';
+import { useAccount, useDisconnect, useConnect, useConnectors, usePublicClient } from 'wagmi';
 import {
   Transaction,
   TransactionButton,
@@ -21,7 +21,7 @@ import {
 } from '@coinbase/onchainkit/identity';
 import { Difficulty, DIFFICULTY_CONFIG, CONTRACT_ADDRESS, SLIDE_PUZZLE_ABI } from '@/lib/contract';
 import { formatTime } from '@/lib/puzzle';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, decodeEventLog } from 'viem';
 import { baseSepolia, base } from 'viem/chains';
 
 interface MintButtonProps {
@@ -30,7 +30,7 @@ interface MintButtonProps {
   moveCount: number;
   isImageMode: boolean;
   imageIpfsHash: string;
-  onMintSuccess?: (txHash: string) => void;
+  onMintSuccess?: (txHash: string, tokenId?: number) => void;
 }
 
 // 環境変数でネットワークを切り替え
@@ -42,6 +42,7 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
   const { disconnect } = useDisconnect();
   const { connect } = useConnect();
   const connectors = useConnectors();
+  const publicClient = usePublicClient();
   const [hasMinted, setHasMinted] = useState(false);
   const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
 
@@ -56,13 +57,43 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
     }
   }, [isConnected, autoConnectAttempted, connectors, connect]);
 
-  const handleOnStatus = useCallback((status: LifecycleStatus) => {
+  const handleOnStatus = useCallback(async (status: LifecycleStatus) => {
     console.log('Transaction status:', status.statusName, status.statusData);
     if (status.statusName === 'success') {
       setHasMinted(true);
-      const txHash = (status.statusData as { transactionReceipts?: { transactionHash: string }[] })?.transactionReceipts?.[0]?.transactionHash;
+      const txHash = (status.statusData as { transactionReceipts?: { transactionHash: string; logs?: any[] }[] })?.transactionReceipts?.[0]?.transactionHash;
+      const logs = (status.statusData as { transactionReceipts?: { transactionHash: string; logs?: any[] }[] })?.transactionReceipts?.[0]?.logs;
+
+      let tokenId: number | undefined;
+
+      // Extract tokenId from PuzzleSolved event
+      if (logs && logs.length > 0) {
+        try {
+          // Find the PuzzleSolved event
+          for (const log of logs) {
+            try {
+              const decodedLog = decodeEventLog({
+                abi: SLIDE_PUZZLE_ABI,
+                data: log.data,
+                topics: log.topics,
+              });
+
+              if (decodedLog.eventName === 'PuzzleSolved') {
+                tokenId = Number(decodedLog.args.tokenId);
+                break;
+              }
+            } catch (e) {
+              // Skip logs that don't match our ABI
+              continue;
+            }
+          }
+        } catch (error) {
+          console.error('Error decoding logs:', error);
+        }
+      }
+
       if (txHash) {
-        onMintSuccess?.(txHash);
+        onMintSuccess?.(txHash, tokenId);
       }
     }
   }, [onMintSuccess]);

@@ -1,8 +1,7 @@
 import { Abi } from 'viem';
 
 // デプロイ後にこのアドレスを更新
-//export const CONTRACT_ADDRESS = '0xF0fF4783fE53531aBAEfef67cE0f15c559E04a04' as const;
-export const CONTRACT_ADDRESS = '0xbcC3a112c66cE729BB65434C6b4e6fFE93cf5347' as const;
+export const CONTRACT_ADDRESS = '0x8b3dD7A1df81860483ffB7D4f6C23D83F92e3Dc0' as const;
 
 export const SLIDE_PUZZLE_ABI: Abi = [
   {

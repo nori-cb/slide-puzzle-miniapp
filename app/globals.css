@@ -61,12 +61,12 @@ body {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
-/* Hard - 落ち着いた紫 */
+/* Hard - 落ち着いた赤 */
 .puzzle-tile.tile-hard {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 .puzzle-tile.tile-hard:hover {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
 .puzzle-tile.empty {
@@ -107,12 +107,12 @@ body {
 }
 
 .difficulty-badge.hard {
-  @apply border-purple-600 text-purple-400;
-  @apply hover:bg-purple-600 hover:text-white;
+  @apply border-red-600 text-red-400;
+  @apply hover:bg-red-600 hover:text-white;
 }
 
 .difficulty-badge.hard.active {
-  @apply bg-purple-600 text-white;
+  @apply bg-red-600 text-white;
 }
 
 /* Timer display */
