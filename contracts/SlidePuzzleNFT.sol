@@ -246,18 +246,19 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         PuzzleType puzzleType,
         string memory imageIpfsHash,
         string memory difficultyName,
-        string memory gridSize,
+        string memory /* gridSize */,
         uint256 moveCount
     ) internal pure returns (string memory) {
+        string memory bgColor = _getBackgroundColor(difficulty);
+        string memory timeStr = _formatTime(timeInMs);
+
         // Imageモードの場合、IPFS画像を表示
         if (puzzleType == PuzzleType.Image && bytes(imageIpfsHash).length > 0) {
-            string memory bgColor = _getBackgroundColor(difficulty);
-            string memory timeStr = _formatTime(timeInMs);
-
             return string(
                 abi.encodePacked(
                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">',
                     '<defs>',
+                    '<style>@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@700;900&amp;display=swap");</style>',
                     '<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">',
                     '<stop offset="0%" style="stop-color:', bgColor, ';stop-opacity:1" />',
                     '<stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />',
@@ -280,13 +281,11 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         }
 
         // Numberモードの場合、数字グリッドを表示
-        string memory bgColor = _getBackgroundColor(difficulty);
-        string memory timeStr = _formatTime(timeInMs);
-
         return string(
             abi.encodePacked(
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">',
                 '<defs>',
+                '<style>@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@700;900&amp;display=swap");</style>',
                 '<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">',
                 '<stop offset="0%" style="stop-color:', bgColor, ';stop-opacity:1" />',
                 '<stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />',
@@ -353,7 +352,7 @@ contract SlidePuzzleNFT is ERC721, Ownable {
                         '" width="', size.toString(), '" height="', size.toString(),
                         '" fill="#ffffff" rx="4"/>',
                         '<text x="', (x + size / 2).toString(), '" y="', (y + size / 2 + 5).toString(),
-                        '" font-family="Arial" font-size="', (cellSize / 3).toString(),
+                        '" font-family="Rubik, Arial, sans-serif" font-weight="900" font-size="', (cellSize / 3).toString(),
                         '" fill="#333" text-anchor="middle">', num.toString(), '</text>'
                     );
                 }
