@@ -79,7 +79,7 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
               });
 
               if (decodedLog.eventName === 'PuzzleSolved' && decodedLog.args) {
-                tokenId = Number(decodedLog.args.tokenId);
+                tokenId = Number((decodedLog.args as any).tokenId);
                 break;
               }
             } catch (e) {
