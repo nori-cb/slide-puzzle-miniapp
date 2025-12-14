@@ -17,7 +17,7 @@ export function ShareButton({ difficulty, timeInMs, isImageMode, tokenId, txHash
 
   const handleShare = useCallback(() => {
     const puzzleMode = isImageMode ? 'Image' : 'Number';
-    const text = `🧩 I just solved a ${config.gridSize}×${config.gridSize} (${config.name} & ${puzzleMode}) slide puzzle in ${formatTime(timeInMs)}!\n\nCan you beat my time? 🏆\n\n#SlidePuzzle #Base #MiniApp`;
+    const text = `🧩 I just solved a ${config.name} - ${puzzleMode} slide puzzle in ${formatTime(timeInMs)}!\n\nCan you beat my time? 🏆\n\n#SlidePuzzle #Base #MiniApp`;
 
     // Warpcast compose URL
     const encodedText = encodeURIComponent(text);

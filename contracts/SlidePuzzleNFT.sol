@@ -224,7 +224,7 @@ contract SlidePuzzleNFT is ERC721, Ownable {
     function _formatTime(uint256 timeInMs) internal pure returns (string memory) {
         uint256 mins = timeInMs / 60000;
         uint256 secs = (timeInMs % 60000) / 1000;
-        uint256 ms = timeInMs % 1000;
+        uint256 cs = (timeInMs % 1000) / 10; // centiseconds (2 digits)
 
         return string(
             abi.encodePacked(
@@ -233,8 +233,8 @@ contract SlidePuzzleNFT is ERC721, Ownable {
                 secs < 10 ? "0" : "",
                 secs.toString(),
                 ".",
-                ms < 100 ? (ms < 10 ? "00" : "0") : "",
-                ms.toString()
+                cs < 10 ? "0" : "",
+                cs.toString()
             )
         );
     }
