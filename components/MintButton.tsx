@@ -156,8 +156,11 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
       {/* 記録表示 */}
       <div className="game-card text-center">
         <div className="text-gray-400 text-sm mb-2">Your Record</div>
-        <div className="font-display text-xl text-white mb-1">{config.name}</div>
+        <div className="font-display text-xl text-white mb-1">
+          {config.name} - {isImageMode ? 'Image' : 'Number'}
+        </div>
         <div className="timer-display text-3xl">{formatTime(timeInMs)}</div>
+        <div className="text-gray-400 text-lg mt-2">Moves: {moveCount}</div>
       </div>
 
       {/* ミントボタン */}
