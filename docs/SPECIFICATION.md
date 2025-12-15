@@ -1,6 +1,6 @@
 # Slide Puzzle Master - 仕様書
 
-> Version 1.0 | Base Mini App
+> Version 1.2 | Base Mini App
 
 ## 目次
 
@@ -43,6 +43,15 @@ Slide Puzzle Master は、Base ブロックチェーン上で動作するスラ�
 
 ### 2.1 ゲーム機能
 
+#### ゲームモード
+
+| モード | 説明 |
+|--------|------|
+| Number Mode | 伝統的な数字パズル。開始後は「?」で隠される |
+| Image Mode | IPFS上の画像を使ったパズル。現在は「Cute Cats」画像を使用 |
+
+各モードは独立したリーダーボードを持ち、NFTにもモード情報が記録されます。
+
 #### 難易度設定
 
 | 難易度 | グリッドサイズ | ピース数 | 目安時間 |
@@ -58,8 +67,8 @@ Slide Puzzle Master は、Base ブロックチェーン上で動作するスラ�
   - 開始前は数字が表示され、配置を記憶できる
   - Start押下後は数字が「?」で隠される
   - Start押下と同時にタイマースタート
-- **タイマー**: Startボタン押下でスタート、完成でストップ（ミリ秒単位）
-- **移動回数**: カウント表示（NFTには記録されない）
+- **タイマー**: Startボタン押下でスタート、完成でストップ（ミリ秒単位、MM:SS.CC形式で表示）
+- **移動回数**: カウント表示（NFTに記録される）
 - **操作方法**: PointerEvent APIによるスワイプ/ドラッグ操作
   - マウスとタッチを統一的に処理
   - 空きマスに向かってスワイプすることで、その列/行全体を同時移動
@@ -80,7 +89,10 @@ Slide Puzzle Master は、Base ブロックチェーン上で動作するスラ�
 
 - プレイヤーのウォレットアドレス
 - 難易度（Easy / Normal / Hard）
-- クリアタイム（ミリ秒単位）
+- ゲームモード（Number / Image）
+- クリアタイム（ミリ秒単位、MM:SS.CC形式で表示）
+- 移動回数
+- IPFS画像ハッシュ（Imageモードのみ）
 - ミント日時
 
 #### NFT画像（オンチェーンSVG）
@@ -91,13 +103,21 @@ NFTの画像はブロックチェーン上で動的に生成されます（外�
 |--------|--------|
 | Easy | 緑系 (#2d5a27) |
 | Normal | 青系 (#1e3a5f) |
-| Hard | 紫系 (#5c2d5c) |
+| Hard | 赤系 (#7f1d1d) |
+
+**Image Mode特有の要素:**
+- IPFS画像を`https://ipfs.io/ipfs/[hash]`形式で埋め込み
+- OpenSeaなどのNFTマーケットプレイスで正しく表示
+
+**Number Mode特有の要素:**
+- パズルグリッド表示（Rubikフォント、font-weight: 900使用）
 
 ### 2.3 リーダーボード機能
 
-- 難易度別にトップ10を表示
+- 難易度別・モード別にトップ10を表示（Easy-Number, Easy-Image, Normal-Number, Normal-Image, Hard-Number, Hard-Image の6種類）
 - NFTをミントした人のみがランキングに登録される
 - クリアタイムが短い順にランク付け
+- ミント成功後に自動リフレッシュ
 
 ### 2.4 Farcaster連携
 
@@ -396,12 +416,21 @@ enum Difficulty {
     Hell       // 4: 7x7 (Phase 2)
 }
 
+// パズルタイプEnum
+enum PuzzleType {
+    Number,    // 0: 数字モード
+    Image      // 1: 画像モード
+}
+
 // NFTごとの記録
 struct PuzzleRecord {
     address player;           // プレイヤーアドレス
     Difficulty difficulty;    // 難易度
     uint256 timeInMs;         // クリアタイム（ミリ秒）
     uint256 timestamp;        // ミント日時（UNIXタイムスタンプ）
+    PuzzleType puzzleType;    // パズルタイプ
+    uint256 moveCount;        // 移動回数
+    string imageIpfsHash;     // IPFS画像ハッシュ（Imageモードのみ）
 }
 
 // リーダーボードエントリ
@@ -418,7 +447,7 @@ struct LeaderboardEntry {
 |--------|-----|------|
 | `_nextTokenId` | `uint256` | 次に発行するトークンID |
 | `puzzleRecords` | `mapping(uint256 => PuzzleRecord)` | トークンID → 記録 |
-| `leaderboards` | `mapping(Difficulty => LeaderboardEntry[])` | 難易度 → ランキング配列 |
+| `leaderboards` | `mapping(bytes32 => LeaderboardEntry[])` | ハッシュ(難易度+タイプ) → ランキング配列 |
 | `MAX_LEADERBOARD_SIZE` | `uint256` | 10（定数） |
 
 ### 6.4 関数一覧
@@ -427,8 +456,8 @@ struct LeaderboardEntry {
 
 | 関数 | 引数 | 戻り値 | 説明 |
 |------|------|--------|------|
-| `mint` | `difficulty`, `timeInMs` | `tokenId` | NFTをミントしリーダーボードを更新 |
-| `getLeaderboard` | `difficulty` | `LeaderboardEntry[]` | 指定難易度のランキングを取得 |
+| `mint` | `difficulty`, `timeInMs`, `puzzleType`, `moveCount`, `imageIpfsHash` | `tokenId` | NFTをミントしリーダーボードを更新 |
+| `getLeaderboard` | `difficulty`, `puzzleType` | `LeaderboardEntry[]` | 指定難易度・タイプのランキングを取得 |
 | `tokenURI` | `tokenId` | `string` | NFTメタデータ（Base64エンコードJSON + SVG） |
 | `totalSupply` | - | `uint256` | 発行済NFT総数 |
 
@@ -436,13 +465,13 @@ struct LeaderboardEntry {
 
 | 関数 | 説明 |
 |------|------|
-| `_updateLeaderboard` | リーダーボードを更新（タイム順ソート挿入） |
-| `_getDifficultyName` | Enum → 文字列変換 |
-| `_getGridSize` | Enum → "3x3"等の文字列変換 |
-| `_formatTime` | ミリ秒 → "M:SS.mmm"形式変換 |
-| `_generateSVG` | NFT画像のSVGを生成 |
+| `_updateLeaderboard` | リーダーボードを更新（タイム順ソート挿入、難易度+タイプでハッシュ化） |
+| `_getDifficultyName` | Difficulty Enum → 文字列変換 |
+| `_getGridSize` | Difficulty Enum → "3x3"等の文字列変換 |
+| `_formatTime` | ミリ秒 → "M:SS.CC"形式変換（小数点以下2桁） |
+| `_generateSVG` | NFT画像のSVGを生成（Number/Imageモード対応） |
 | `_getBackgroundColor` | 難易度に応じた背景色を返す |
-| `_generatePuzzleGrid` | パズルグリッドのSVG要素を生成 |
+| `_generatePuzzleGrid` | パズルグリッドのSVG要素を生成（Rubikフォント使用） |
 
 ### 6.5 イベント
 
@@ -451,11 +480,13 @@ event PuzzleSolved(
     address indexed player,
     uint256 indexed tokenId,
     Difficulty difficulty,
+    PuzzleType puzzleType,
     uint256 timeInMs
 );
 
 event LeaderboardUpdated(
     Difficulty indexed difficulty,
+    PuzzleType indexed puzzleType,
     address indexed player,
     uint256 timeInMs,
     uint256 rank
@@ -467,12 +498,14 @@ event LeaderboardUpdated(
 ```json
 {
   "name": "Slide Puzzle Master #0",
-  "description": "Proof of solving a 3x3 slide puzzle in 0:45.123",
+  "description": "Proof of solving a Easy - Number slide puzzle in 0:45.12 with 96 moves",
   "attributes": [
     { "trait_type": "Difficulty", "value": "Easy" },
     { "trait_type": "Grid Size", "value": "3x3" },
-    { "trait_type": "Time (ms)", "value": 45123 },
-    { "trait_type": "Time", "value": "0:45.123" }
+    { "trait_type": "Type", "value": "Number" },
+    { "trait_type": "Moves", "value": 96 },
+    { "trait_type": "Time (ms)", "value": 45120 },
+    { "trait_type": "Time", "value": "0:45.12" }
   ],
   "image": "data:image/svg+xml;base64,..."
 }
@@ -490,10 +523,14 @@ event LeaderboardUpdated(
 | `gameState` | `'idle' \| 'playing' \| 'completed'` | `'idle'` | ゲーム状態 |
 | `currentTime` | `number` | `0` | 現在の経過時間（ms） |
 | `finalTime` | `number` | `0` | クリア時の確定タイム |
+| `finalMoveCount` | `number` | `0` | クリア時の確定移動回数 |
 | `resetTrigger` | `number` | `0` | パズルリセット用カウンター（Give Up時に更新） |
 | `hasMinted` | `boolean` | `false` | NFTミント完了フラグ |
+| `mintedTokenId` | `number \| undefined` | `undefined` | ミントされたトークンID |
 | `isSDKLoaded` | `boolean` | `false` | Farcaster SDK初期化完了フラグ |
 | `leaderboardRefresh` | `number` | `0` | リーダーボード自動更新トリガー |
+| `isImageMode` | `boolean` | `false` | 画像モード有効フラグ |
+| `selectedImage` | `PuzzleImage \| null` | `null` | 選択されたパズル画像 |
 | `showTutorial` | `boolean` | - | チュートリアルモーダル表示状態（useTutorialフック） |
 
 ### 7.2 パズルロジック（lib/puzzle.ts）
