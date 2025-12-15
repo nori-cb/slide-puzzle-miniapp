@@ -265,7 +265,7 @@ contract SlidePuzzleNFT is ERC721, Ownable {
                     '</linearGradient>',
                     '</defs>',
                     '<rect width="400" height="400" fill="url(#bg)"/>',
-                    '<image href="ipfs://', imageIpfsHash, '" x="85" y="50" width="230" height="230" preserveAspectRatio="xMidYMid slice"/>',
+                    '<image href="https://ipfs.io/ipfs/', imageIpfsHash, '" x="85" y="50" width="230" height="230" preserveAspectRatio="xMidYMid slice"/>',
                     '<text x="200" y="310" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">',
                     difficultyName, ' - Image',
                     '</text>',
