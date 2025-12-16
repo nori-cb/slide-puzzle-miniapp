@@ -167,7 +167,7 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         return leaderboards[difficulty][puzzleType];
     }
 
-    /// @notice NFTのメタデータを取得（オンチェーンSVG）
+    /// @notice NFTのメタデータを取得（オンチェーンSVG or IPFS画像）
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
 
@@ -176,7 +176,15 @@ contract SlidePuzzleNFT is ERC721, Ownable {
         string memory difficultyName = _getDifficultyName(record.difficulty);
         string memory gridSize = _getGridSize(record.difficulty);
         string memory timeStr = _formatTime(record.timeInMs);
-        string memory svg = _generateSVG(record.difficulty, record.timeInMs, record.puzzleType, record.imageIpfsHash, difficultyName, gridSize, record.moveCount);
+
+        // 画像URL生成：ImageモードはIPFS直接、NumberモードはSVG
+        string memory imageUrl;
+        if (record.puzzleType == PuzzleType.Image && bytes(record.imageIpfsHash).length > 0) {
+            imageUrl = string(abi.encodePacked('ipfs://', record.imageIpfsHash));
+        } else {
+            string memory svg = _generateSVG(record.difficulty, record.timeInMs, record.puzzleType, record.imageIpfsHash, difficultyName, gridSize, record.moveCount);
+            imageUrl = string(abi.encodePacked('data:image/svg+xml;base64,', Base64.encode(bytes(svg))));
+        }
 
         string memory json = Base64.encode(
             bytes(
@@ -188,10 +196,9 @@ contract SlidePuzzleNFT is ERC721, Ownable {
                         '{"trait_type": "Difficulty", "value": "', difficultyName, '"},',
                         '{"trait_type": "Grid Size", "value": "', gridSize, '"},',
                         '{"trait_type": "Type", "value": "', record.puzzleType == PuzzleType.Number ? "Number" : "Image", '"},',
-                        '{"trait_type": "Time (ms)", "value": ', record.timeInMs.toString(), '},',
                         '{"trait_type": "Time", "value": "', timeStr, '"},',
                         '{"trait_type": "Moves", "value": ', record.moveCount.toString(), '}',
-                        '], "image": "data:image/svg+xml;base64,', Base64.encode(bytes(svg)), '"}'
+                        '], "image": "', imageUrl, '"}'
                     )
                 )
             )
