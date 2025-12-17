@@ -168,12 +168,6 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
         chainId={chain.id}
         calls={mintCalls}
         onStatus={handleOnStatus}
-        capabilities={{
-          dataSuffix: {
-            enabled: true,
-            value: '0x6263005f6673396b716336' // "bc_fs9gkqc6" in hex
-          }
-        }}
       >
         <TransactionButton
           className="btn-primary w-full"
