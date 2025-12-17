@@ -10,6 +10,7 @@ import {
   TransactionStatusAction,
 } from '@coinbase/onchainkit/transaction';
 import type { LifecycleStatus } from '@coinbase/onchainkit/transaction';
+import { Attribution } from 'ox/erc8021';
 import {
   ConnectWallet,
   Wallet,
@@ -168,8 +169,11 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
         chainId={chain.id}
         calls={mintCalls}
         onStatus={handleOnStatus}
+        capabilities={{
+          dataSuffix: Attribution.toDataSuffix({ codes: ["bc_fs9gkqc6"] })
+        }}
       >
-        <TransactionButton 
+        <TransactionButton
           className="btn-primary w-full"
           text="🎨 Mint NFT & Join Leaderboard"
         />
