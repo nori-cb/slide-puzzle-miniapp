@@ -8,28 +8,24 @@
 - 🎮 2つのゲームモード（Number / Image）
 - ⏱️ ミリ秒単位のタイム計測
 - 📊 移動回数のカウント
-- 🎨 クリア時にオンチェーンNFTをミント
+- 🎨 クリア時にNFTをミント
 - 🏆 難易度別・モード別リーダーボード（トップ10）
-- 📢 Farcasterでシェア
+- 📢 Base App/Farcasterでシェア
 - 📖 初回起動時の操作チュートリアル
-- 👆 スワイプ/ドラッグで複数タイルを同時スライド
-- ▶️ 記憶フェーズ（Startボタンで開始）
+- 👆 スワイプで複数タイルを同時移動
 - 🏳️ Give Upボタンでリタイア可能
 - 🔄 自動ウォレット接続（Farcaster内）
+- 開始前は「?」マークで隠される
 
 ## ゲームモード
 
 ### Number Mode（数字モード）
 - 伝統的なスライドパズル
 - タイルに数字が表示される
-- 開始後は「?」マークで隠される
 
 ### Image Mode（画像モード）
 - IPFS上の画像を使ったパズル
-- 現在は「Cute Cats」画像を使用
-- 将来的に追加画像の実装予定
-
-各モードは独立したリーダーボードを持ち、NFTにもモード情報が記録されます。
+- ランダムで画像が変わる
 
 ## NFTの特徴
 
@@ -44,101 +40,19 @@
 
 ### オンチェーンSVG画像
 - 難易度別の背景色（Easy: 緑、Normal: 青、Hard: 赤）
-- Number Mode: パズルグリッド表示（Rubikフォント使用）
-- Image Mode: IPFS画像表示（https://ipfs.io/ipfs/ 経由）
-- クリアタイム、移動回数、モード情報を含む
+- Number Mode: パズルグリッド表示、クリアタイム、移動回数、モードを含む
+- Image Mode: IPFS画像表示
 
 ## 操作方法
 
-1. **ゲームモード選択**: 画面上部のトグルでNumber/Imageを選択
 2. **難易度選択**: Easy/Normal/Hardから選択
-3. **記憶**: パズルの配置を確認（数字が表示されている状態）
-4. **開始**: ▶ Startボタンを押すと数字が「?」に隠され、タイマースタート
-5. **操作**: タイルをスワイプ/ドラッグして移動
+1. **モード選択**: 画面上部のトグルでNumber/Imageを選択
+4. **開始**: ▶ Startボタンを押すとプレイ開始（タイマー開始）
+5. **操作**: タイルをスワイプして移動
    - 複数のタイルを一度にスライド可能
    - 空きマスに向かってスワイプすることで、その列/行全体が移動
-6. **完成**: 1から順番に並べるとクリア
+6. **完成**: 1から順番にZ方向に並べ終わるとクリア
 7. **ミント**: NFTとして記録を保存し、リーダーボードに登録
-
-## クイックスタート
-
-### 1. 依存関係のインストール
-
-```bash
-npm install
-```
-
-### 2. 環境変数の設定
-
-```bash
-cp .env.example .env.local
-```
-
-`.env.local` を編集:
-
-```env
-# testnet（テスト用）または mainnet（本番用）
-NEXT_PUBLIC_NETWORK=testnet
-
-# デプロイ後のURL（ローカル開発時はそのまま）
-NEXT_PUBLIC_URL=http://localhost:3000
-```
-
-### 3. スマートコントラクトのデプロイ
-
-詳細は [SETUP_GUIDE.md](./docs/SETUP_GUIDE.md) を参照。
-
-```bash
-# slide-puzzle-contractsフォルダでFoundryプロジェクトをセットアップ
-cd ~/projects
-mkdir slide-puzzle-contracts && cd slide-puzzle-contracts
-forge init
-forge install OpenZeppelin/openzeppelin-contracts
-echo '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/' > remappings.txt
-
-# slide-puzzle-miniapp/contracts/SlidePuzzleNFT.solをsrc/にコピー
-cp ../slide-puzzle-miniapp/contracts/SlidePuzzleNFT.sol src/
-
-# Base Sepoliaにデプロイ
-forge create --rpc-url https://sepolia.base.org \
-  --private-key YOUR_PRIVATE_KEY \
-  --broadcast \
-  src/SlidePuzzleNFT.sol:SlidePuzzleNFT
-```
-
-### 4. コントラクトアドレスの更新
-
-`lib/contract.ts` の `CONTRACT_ADDRESS` をデプロイしたアドレスに更新:
-
-```typescript
-export const CONTRACT_ADDRESS = '0x...your deployed address...' as const;
-```
-
-### 5. 開発サーバーの起動
-
-```bash
-npm run dev
-```
-
-http://localhost:3000 でアプリを確認。
-
-## 本番デプロイ
-
-### Vercelにデプロイ
-
-1. GitHubにプッシュ
-2. Vercelでプロジェクトをインポート
-3. Root Directory を `slide-puzzle-miniapp` に設定（Vercelダッシュボードで設定）
-4. 環境変数を設定
-5. デプロイ
-
-### Farcaster Manifest設定
-
-デプロイ後:
-
-1. https://www.base.dev/preview?tab=account にアクセス
-2. アプリURLを入力して `accountAssociation` を生成
-3. `app/.well-known/farcaster.json/route.ts` に認証情報を追加
 
 ## プロジェクト構成
 
@@ -189,40 +103,10 @@ slide-puzzle-miniapp/
 - **Hosting**: Vercel
 - **Contract Deployment**: Foundry
 
-## 現在のコントラクトアドレス
-
-- **Base Sepolia (testnet)**: `0x83faEe3e88bb11498e11c58FD295CA316407dcb4`
-
-## 最近の更新
-
-### v1.2 - IPFS画像表示修正
-- SVG内のIPFS画像URLを`ipfs://`から`https://ipfs.io/ipfs/`形式に変更
-- OpenSeaなどのNFTマーケットプレイスでの画像表示を改善
-
-### v1.1 - NFTメタデータ改善
-- Solidityコンパイラ警告の修正
-- SVGフォントをゲームUIと統一（Rubik font-weight 900）
-- タイム表示形式を統一（小数点以下2桁）
-- 共有メッセージフォーマットの改善
-
-### v1.0 - 画像モード追加
-- Image Modeの実装
-- IPFS画像統合
-- モード別リーダーボード
-- 移動回数の記録とNFTへの追加
-- タイプ情報（Number/Image）の追加
-
 ## ドキュメント
 
 - [仕様書](./docs/SPECIFICATION.md) - 機能仕様、技術仕様、動作フロー
 - [セットアップガイド](./docs/SETUP_GUIDE.md) - 初心者向けステップバイステップガイド
-
-## 今後の展開
-
-- [ ] 追加のパズル画像（複数の画像から選択可能に）
-- [ ] Very Hard（6×6）、Hell（7×7）難易度の実装
-- [ ] カスタム画像アップロード機能
-- [ ] プレイヤー統計ページ
 
 ## ライセンス
 
