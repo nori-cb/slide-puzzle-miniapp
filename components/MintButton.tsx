@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useDisconnect, useConnect, useConnectors, usePublicClient } from 'wagmi';
+import { useAccount, useConnect, useConnectors, usePublicClient } from 'wagmi';
 import {
   Transaction,
   TransactionButton,
@@ -14,11 +14,6 @@ import {
   ConnectWallet,
   Wallet,
 } from '@coinbase/onchainkit/wallet';
-import {
-  Avatar,
-  Name,
-  Identity,
-} from '@coinbase/onchainkit/identity';
 import { Difficulty, DIFFICULTY_CONFIG, CONTRACT_ADDRESS, SLIDE_PUZZLE_ABI } from '@/lib/contract';
 import { formatTime } from '@/lib/puzzle';
 import { encodeFunctionData, decodeEventLog } from 'viem';
@@ -39,7 +34,6 @@ const chain = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? base : baseSepolia
 export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, imageIpfsHash, onMintSuccess }: MintButtonProps) {
   const config = DIFFICULTY_CONFIG[difficulty];
   const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
   const { connect } = useConnect();
   const connectors = useConnectors();
   const publicClient = usePublicClient();
@@ -50,7 +44,7 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
   useEffect(() => {
     if (!isConnected && !autoConnectAttempted) {
       setAutoConnectAttempted(true);
-      const farcasterConnector = connectors.find(c => c.id === 'farcasterFrame');
+      const farcasterConnector = connectors.find(c => c.id === 'farcasterMiniApp');
       if (farcasterConnector) {
         connect({ connector: farcasterConnector });
       }
@@ -139,20 +133,6 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
 
   return (
     <div className="space-y-4">
-      {/* 接続中のウォレット表示 */}
-      <div className="flex items-center justify-between bg-puzzle-card rounded-lg px-3 py-2">
-        <Identity address={address} className="flex items-center gap-2">
-          <Avatar className="w-6 h-6" />
-          <Name className="text-white text-sm" />
-        </Identity>
-        <button
-          onClick={() => disconnect()}
-          className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
-        >
-          Disconnect
-        </button>
-      </div>
-
       {/* 記録表示 */}
       <div className="game-card text-center">
         <div className="text-gray-400 text-sm mb-2">Your Record</div>

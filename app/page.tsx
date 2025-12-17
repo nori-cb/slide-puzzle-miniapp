@@ -9,6 +9,7 @@ import { Leaderboard } from '@/components/Leaderboard';
 import { MintButton } from '@/components/MintButton';
 import { ShareButton } from '@/components/ShareButton';
 import { TutorialModal, useTutorial } from '@/components/TutorialModal';
+import { WalletInfo } from '@/components/WalletInfo';
 import { Difficulty } from '@/lib/contract';
 import { getRandomPuzzleImage, type PuzzleImage } from '@/lib/puzzleImages';
 
@@ -126,6 +127,9 @@ export default function Home() {
             Move • Solve • Mint
           </p>
         </div>
+
+        {/* ウォレット情報 */}
+        <WalletInfo />
 
         {/* 難易度選択 */}
         <div className="mb-6">
