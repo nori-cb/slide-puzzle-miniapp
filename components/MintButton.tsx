@@ -10,7 +10,6 @@ import {
   TransactionStatusAction,
 } from '@coinbase/onchainkit/transaction';
 import type { LifecycleStatus } from '@coinbase/onchainkit/transaction';
-import { Attribution } from 'ox/erc8021';
 import {
   ConnectWallet,
   Wallet,
@@ -170,7 +169,10 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
         calls={mintCalls}
         onStatus={handleOnStatus}
         capabilities={{
-          dataSuffix: Attribution.toDataSuffix({ codes: ["bc_fs9gkqc6"] })
+          dataSuffix: {
+            enabled: true,
+            value: '0x6263005f6673396b716336' // "bc_fs9gkqc6" in hex
+          }
         }}
       >
         <TransactionButton
