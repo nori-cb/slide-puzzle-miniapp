@@ -10,11 +10,16 @@ const nextConfig = {
         'pino-pretty': false,
       };
 
-      // Suppress specific module not found warnings
-      config.ignoreWarnings = [
-        { module: /@react-native-async-storage\/async-storage/ },
-        { module: /pino-pretty/ },
-      ];
+      // Use IgnorePlugin to suppress module not found errors
+      const webpack = require('webpack');
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /@react-native-async-storage\/async-storage/,
+        }),
+        new webpack.IgnorePlugin({
+          resourceRegExp: /pino-pretty/,
+        })
+      );
     }
     return config;
   },
