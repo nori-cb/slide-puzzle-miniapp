@@ -9,6 +9,12 @@ const nextConfig = {
         '@react-native-async-storage/async-storage': false,
         'pino-pretty': false,
       };
+
+      // Suppress specific module not found warnings
+      config.ignoreWarnings = [
+        { module: /@react-native-async-storage\/async-storage/ },
+        { module: /pino-pretty/ },
+      ];
     }
     return config;
   },
