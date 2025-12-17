@@ -5,7 +5,7 @@ import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { base, baseSepolia } from 'viem/chains';
-import { farcasterFrame } from '@farcaster/frame-wagmi-connector';
+import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { coinbaseWallet, injected } from 'wagmi/connectors';
 
 // 環境変数でネットワークを切り替え
@@ -23,7 +23,7 @@ const wagmiConfig = createConfig({
     [baseSepolia.id]: http('https://sepolia.base.org'),
   },
   connectors: [
-    farcasterFrame(),
+    farcasterMiniApp(),
     coinbaseWallet({ appName: 'Slide Puzzle' }),
     injected(),
   ],
