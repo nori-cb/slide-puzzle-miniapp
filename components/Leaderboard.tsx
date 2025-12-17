@@ -36,7 +36,24 @@ export function Leaderboard({ difficulty, refreshTrigger, isImageMode }: Leaderb
     }
   }, [refreshTrigger, refetch]);
 
-  const entries = (data as LeaderboardEntry[] | undefined) || [];
+  const rawEntries = (data as LeaderboardEntry[] | undefined) || [];
+
+  // 各プレイヤーの最高記録のみを保持（時間が最も短いもの）
+  const entries = rawEntries.reduce((acc, entry) => {
+    const existingIndex = acc.findIndex(e => e.player.toLowerCase() === entry.player.toLowerCase());
+
+    if (existingIndex === -1) {
+      // 新しいプレイヤー
+      acc.push(entry);
+    } else {
+      // 既存のプレイヤー - より良い記録なら置き換え
+      if (entry.timeInMs < acc[existingIndex].timeInMs) {
+        acc[existingIndex] = entry;
+      }
+    }
+
+    return acc;
+  }, [] as LeaderboardEntry[]);
 
   const getRankClass = (rank: number) => {
     if (rank === 1) return 'rank-1';

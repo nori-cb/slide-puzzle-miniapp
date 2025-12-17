@@ -39,6 +39,7 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
   const publicClient = usePublicClient();
   const [hasMinted, setHasMinted] = useState(false);
   const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
+  const [transactionKey, setTransactionKey] = useState(0);
 
   // Farcaster内では自動接続を試みる
   useEffect(() => {
@@ -54,7 +55,6 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
   const handleOnStatus = useCallback(async (status: LifecycleStatus) => {
     console.log('Transaction status:', status.statusName, status.statusData);
     if (status.statusName === 'success') {
-      setHasMinted(true);
       const txHash = (status.statusData as { transactionReceipts?: { transactionHash: string; logs?: any[] }[] })?.transactionReceipts?.[0]?.transactionHash;
       const logs = (status.statusData as { transactionReceipts?: { transactionHash: string; logs?: any[] }[] })?.transactionReceipts?.[0]?.logs;
 
@@ -87,6 +87,8 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
       }
 
       if (txHash) {
+        setHasMinted(true);
+        setTransactionKey(prev => prev + 1); // Reset transaction component
         onMintSuccess?.(txHash, tokenId);
       }
     }
@@ -145,6 +147,7 @@ export function MintButton({ difficulty, timeInMs, moveCount, isImageMode, image
 
       {/* ミントボタン */}
       <Transaction
+        key={transactionKey}
         chainId={chain.id}
         calls={mintCalls}
         onStatus={handleOnStatus}
