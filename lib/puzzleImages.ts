@@ -14,19 +14,36 @@ export const PUZZLE_IMAGES: readonly PuzzleImage[] = [
     url: '/puzzle-images/CuteCats.png',
     ipfsHash: 'bafybeia2jo2snz7dqibqn6fqx6zcwvtob3ivhkhcidi7vkmyih256pfbpu',
   },
-  // 将来的に画像を追加
-  // {
-  //   id: 1,
-  //   name: 'Cute Cat',
-  //   url: '/puzzle-images/cat.png',
-  //   ipfsHash: 'bafybeig...',
-  // },
-  // {
-  //   id: 2,
-  //   name: 'Mountain Landscape',
-  //   url: '/puzzle-images/landscape.png',
-  //   ipfsHash: 'bafkreih...',
-  // },
+  {
+    id: 1,
+    name: 'Summer Girl',
+    url: '/puzzle-images/SummerGirl.png',
+    ipfsHash: 'bafybeiauucnga5lci5oaos6l3zlwzoo2hexgsmqysjmyrr4lnfdsmslck4',
+  },
+  {
+    id: 2,
+    name: 'Xmas Violin Boy',
+    url: '/puzzle-images/XmasViolinBoy.png',
+    ipfsHash: 'bafybeiemjdaipmolnqgnk44hpe6zt7acunkg7nhvbao73cn66zz3tljnje',
+  },
+  {
+    id: 3,
+    name: 'Sleeping Cat',
+    url: '/puzzle-images/SleepingCat.png',
+    ipfsHash: 'bafybeicvnqgcgwg62426bdtpx52zal7jd7shesqgnymf5zs6moopqbgssi',
+  },
+  {
+    id: 4,
+    name: 'Fantastic Mountain',
+    url: '/puzzle-images/FantasticMountain.png',
+    ipfsHash: 'bafybeidpn7ciniqhn74dqopowlltg5ahy6qcbncwtgtewkwmnfrt33grwm',
+  },
+  {
+    id: 5,
+    name: 'Dress Miku',
+    url: '/puzzle-images/DressMiku.png',
+    ipfsHash: 'bafybeia63rsdykbfu3c5lole564pnzeghymcs6hwb6kkhtlrn5sswxr6bm',
+  },
 ] as const;
 
 /**
