@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useReadContract } from 'wagmi';
 import { Difficulty, DIFFICULTY_CONFIG, CONTRACT_ADDRESS, SLIDE_PUZZLE_ABI } from '@/lib/contract';
 import { formatTime, shortenAddress } from '@/lib/puzzle';
+import { Name } from '@coinbase/onchainkit/identity';
 
 interface LeaderboardProps {
   difficulty: Difficulty;
@@ -77,8 +78,11 @@ export function Leaderboard({ difficulty, refreshTrigger, isImageMode }: Leaderb
                 <div className={`rank-badge ${getRankClass(index + 1)}`}>
                   {index + 1}
                 </div>
-                <div className="font-mono text-sm">
-                  {shortenAddress(entry.player)}
+                <div className="text-sm min-w-0">
+                  <Name
+                    address={entry.player as `0x${string}`}
+                    className="text-white"
+                  />
                 </div>
               </div>
               <div className="font-mono text-puzzle-accent">
